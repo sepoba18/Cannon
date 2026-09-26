@@ -15,6 +15,7 @@ public class CatalogAdapter extends RecyclerView.Adapter<CatalogAdapter.ViewHold
 
     public interface OnProductoClickListener {
         void onCotizar(ProductoItem producto);
+        void onEditar(ProductoItem producto);
     }
 
     private List<ProductoItem> listaOriginal = new ArrayList<>();
@@ -72,6 +73,12 @@ public class CatalogAdapter extends RecyclerView.Adapter<CatalogAdapter.ViewHold
                 listener.onCotizar(item);
             }
         });
+
+        holder.btnEditar.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onEditar(item);
+            }
+        });
     }
 
     @Override
@@ -81,7 +88,7 @@ public class CatalogAdapter extends RecyclerView.Adapter<CatalogAdapter.ViewHold
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         TextView tvNombre, tvDescuento, tvPlazas;
-        MaterialButton btnCotizar;
+        MaterialButton btnCotizar, btnEditar;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -89,6 +96,7 @@ public class CatalogAdapter extends RecyclerView.Adapter<CatalogAdapter.ViewHold
             tvDescuento = itemView.findViewById(R.id.tvItemDescuento);
             tvPlazas = itemView.findViewById(R.id.tvItemPlazas);
             btnCotizar = itemView.findViewById(R.id.btnItemCotizar);
+            btnEditar = itemView.findViewById(R.id.btnItemEditar);
         }
     }
 }
