@@ -12,33 +12,63 @@
         android:orientation="vertical"
         android:layout_marginBottom="64dp">
 
-        <!-- Header Moderno Cannon -->
+        <!-- Header Moderno Cannon con Botón de Nube -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@color/primary"
-            android:orientation="vertical"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
             android:paddingHorizontal="20dp"
             android:paddingTop="24dp"
             android:paddingBottom="20dp">
 
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:letterSpacing="0.05"
-                android:text="CANNON HOME"
-                android:textColor="@color/white"
-                android:textSize="22sp"
-                android:textStyle="bold" />
+                android:layout_weight="1"
+                android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/tvHeaderSubtitulo"
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:letterSpacing="0.05"
+                    android:text="CANNON HOME"
+                    android:textColor="@color/white"
+                    android:textSize="22sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvHeaderSubtitulo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Cotizador y Calculadora de Descuentos"
+                    android:textColor="@color/text_tertiary"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/tvEstadoNube"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="☁️ Nube Azure disponible"
+                    android:textColor="#86EFAC"
+                    android:textSize="11sp"
+                    android:visibility="gone" />
+            </LinearLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSincronizarNube"
+                style="@style/Widget.Material3.Button.TonalButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:text="Cotizador y Calculadora de Descuentos"
-                android:textColor="@color/text_tertiary"
-                android:textSize="13sp" />
+                android:text="Sincronizar"
+                android:textSize="12sp"
+                app:icon="@drawable/ic_cloud_sync"
+                app:iconSize="18dp"
+                app:cornerRadius="16dp" />
+
         </LinearLayout>
 
         <!-- SECCIÓN 1: COTIZADOR / CALCULADORA -->

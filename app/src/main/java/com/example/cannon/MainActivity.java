@@ -1,6 +1,5 @@
 package com.example.cannon;
 
-import android.content.SharedPreferences;
 import android.graphics.Paint;
 import android.os.Bundle;
 import android.text.Editable;
@@ -10,9 +9,11 @@ import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -23,34 +24,29 @@ import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import com.google.android.material.textfield.TextInputEditText;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final String PREFS_NAME = "CannonPrefs";
-    private static final String KEY_CUSTOM_CATALOG = "custom_catalog";
-
-    // Estructura: Producto -> { Plaza -> Precio }
-    private HashMap<String, HashMap<String, Double>> catalogoPrecios = new HashMap<>();
-    private HashMap<String, Double> catalogoDescuentos = new HashMap<>();
+    // Capas modulares de Datos, Red y Negocio
+    private CatalogRepository repository;
+    private AzureSyncManager syncManager;
 
     // Vistas principales
     private View scrollCotizador, layoutCatalogo;
-    private TextView tvHeaderSubtitulo;
+    private TextView tvHeaderSubtitulo, tvEstadoNube;
     private BottomNavigationView bottomNavigation;
     private ExtendedFloatingActionButton fabAgregarProducto;
+    private MaterialButton btnSincronizarNube;
 
     // Vistas Cotizador
     private AutoCompleteTextView autoProducto;
     private LinearLayout layoutSelectorPlaza;
-    private ChipGroup chipGroupPlazas, chipGroupCategorias, chipGroupDescuentos;
+    private ChipGroup chipGroupPlazas, chipGroupCategorias;
     private TextView tvResumenProducto, tvResumenPlaza, tvPrecioBase, tvBadgeDescuento, tvAhorro, tvPrecioFinal;
     private TextInputEditText etDescuento;
     private MaterialButton btnVerTodosLosProductos, btnAgregarProductoCotizador, btnEditarProductoCotizador;
@@ -72,12 +68,20 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Inicializar módulos de arquitectura
+        repository = new CatalogRepository(this);
+        syncManager = new AzureSyncManager(this);
+
         inicializarVistas();
-        inicializarCatalogo();
         configurarNavegacion();
         configurarCotizador();
         configurarCatalogo();
         configurarFiltroCategorias();
+
+        // Si ya hay URL configurada, sincronización silenciosa de inicio
+        if (syncManager.tieneUrlConfigurada()) {
+            ejecutarSincronizacion(true);
+        }
     }
 
     private void inicializarVistas() {
@@ -92,7 +96,6 @@ public class MainActivity extends AppCompatActivity {
         layoutSelectorPlaza = findViewById(R.id.layoutSelectorPlaza);
         chipGroupPlazas = findViewById(R.id.chipGroupPlazas);
         chipGroupCategorias = findViewById(R.id.chipGroupCategorias);
-        chipGroupDescuentos = findViewById(R.id.chipGroupDescuentos);
         tvResumenProducto = findViewById(R.id.tvResumenProducto);
         tvResumenPlaza = findViewById(R.id.tvResumenPlaza);
         tvPrecioBase = findViewById(R.id.tvPrecioBase);
@@ -109,6 +112,15 @@ public class MainActivity extends AppCompatActivity {
         rvCatalogo = findViewById(R.id.rvCatalogo);
         etBuscarCatalogo = findViewById(R.id.etBuscarCatalogo);
         tvContadorProductos = findViewById(R.id.tvContadorProductos);
+        btnSincronizarNube = findViewById(R.id.btnSincronizarNube);
+        tvEstadoNube = findViewById(R.id.tvEstadoNube);
+
+        btnSincronizarNube.setOnClickListener(v -> ejecutarSincronizacion(false));
+        btnSincronizarNube.setOnLongClickListener(v -> {
+            mostrarDialogoConfigurarUrlNube();
+            return true;
+        });
+        actualizarEstadoNubeVisual();
 
         fabAgregarProducto.setOnClickListener(v -> mostrarDialogoProducto(null, null));
     }
@@ -140,24 +152,18 @@ public class MainActivity extends AppCompatActivity {
         autoProducto.setThreshold(0);
         autoProducto.setOnClickListener(v -> autoProducto.showDropDown());
         autoProducto.setOnFocusChangeListener((v, hasFocus) -> {
-            if (hasFocus) {
-                autoProducto.showDropDown();
-            }
+            if (hasFocus) autoProducto.showDropDown();
         });
 
         autoProducto.setOnItemClickListener((parent, view, position, id) -> {
             String prod = (String) parent.getItemAtPosition(position);
             seleccionarProducto(prod);
+            autoProducto.clearFocus();
+            hideKeyboard();
         });
 
-        btnVerTodosLosProductos.setOnClickListener(v -> {
-            bottomNavigation.setSelectedItemId(R.id.nav_catalog);
-        });
-
-        btnAgregarProductoCotizador.setOnClickListener(v -> {
-            mostrarDialogoProducto(null, null);
-        });
-
+        btnVerTodosLosProductos.setOnClickListener(v -> bottomNavigation.setSelectedItemId(R.id.nav_catalog));
+        btnAgregarProductoCotizador.setOnClickListener(v -> mostrarDialogoProducto(null, null));
         btnEditarProductoCotizador.setOnClickListener(v -> {
             if (productoSeleccionado != null && !productoSeleccionado.isEmpty()) {
                 mostrarDialogoProducto(productoSeleccionado, plazaSeleccionada);
@@ -204,28 +210,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void actualizarAdaptadorProductos() {
-        List<String> productosFiltrados = new ArrayList<>();
-        List<String> todos = new ArrayList<>(catalogoPrecios.keySet());
-        Collections.sort(todos);
-
-        for (String p : todos) {
-            if (categoriaFiltroActual.equals("Todos")) {
-                productosFiltrados.add(p);
-            } else {
-                if (p.toUpperCase().contains(categoriaFiltroActual)) {
-                    productosFiltrados.add(p);
-                }
-            }
-        }
-
+        List<String> productosFiltrados = repository.obtenerNombresPorCategoria(categoriaFiltroActual);
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_dropdown_item_1line, productosFiltrados);
         autoProducto.setAdapter(adapter);
     }
 
-    /**
-     * Configura la interfaz cuando se selecciona un producto en el cotizador.
-     */
     private void seleccionarProducto(String nombreProducto) {
         productoSeleccionado = nombreProducto;
         tvResumenProducto.setText(nombreProducto);
@@ -233,10 +223,10 @@ public class MainActivity extends AppCompatActivity {
             btnEditarProductoCotizador.setVisibility(View.VISIBLE);
         }
 
-        HashMap<String, Double> plazas = catalogoPrecios.get(nombreProducto);
+        HashMap<String, Double> plazas = repository.obtenerPlazas(nombreProducto);
         if (plazas == null || plazas.isEmpty()) return;
 
-        double descDefault = catalogoDescuentos.getOrDefault(nombreProducto, 0.0);
+        double descDefault = repository.obtenerDescuento(nombreProducto);
         etDescuento.setText(String.format(Locale.US, "%.0f", descDefault));
 
         chipGroupPlazas.removeAllViews();
@@ -302,39 +292,48 @@ public class MainActivity extends AppCompatActivity {
         if (precioSeleccionado <= 0) return;
 
         String descStr = etDescuento.getText() != null ? etDescuento.getText().toString().trim() : "";
-        double descuento = descStr.isEmpty() ? 0 : Double.parseDouble(descStr.replace(",", "."));
+        double descuento = 0.0;
+        try {
+            if (!descStr.isEmpty()) {
+                descuento = Double.parseDouble(descStr.replace(",", "."));
+            }
+        } catch (NumberFormatException ignored) {}
 
-        double pFinal = precioSeleccionado * (1.0 - (descuento / 100.0));
-        double montoAhorrado = precioSeleccionado - pFinal;
+        // Delegación del cálculo matemático a CotizadorEngine
+        CotizadorEngine.Resultado res = CotizadorEngine.calcular(precioSeleccionado, descuento);
 
-        if (descuento > 0) {
-            tvPrecioBase.setText(String.format(Locale.getDefault(), "Precio Normal: $%,.0f", precioSeleccionado));
+        if (res.getPorcentajeDescuento() > 0) {
+            tvPrecioBase.setText(String.format(Locale.getDefault(), "Precio Normal: %s", CotizadorEngine.formatearMoneda(res.getPrecioBase())));
             tvPrecioBase.setPaintFlags(tvPrecioBase.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
 
             tvBadgeDescuento.setVisibility(View.VISIBLE);
-            tvBadgeDescuento.setText(String.format(Locale.getDefault(), "-%.0f%%", descuento));
+            tvBadgeDescuento.setText(String.format(Locale.getDefault(), "-%.0f%%", res.getPorcentajeDescuento()));
 
             tvAhorro.setVisibility(View.VISIBLE);
-            tvAhorro.setText(String.format(Locale.getDefault(), "Ahorras: $%,.0f", montoAhorrado));
+            tvAhorro.setText(String.format(Locale.getDefault(), "Ahorras: %s", CotizadorEngine.formatearMoneda(res.getMontoAhorro())));
         } else {
-            tvPrecioBase.setText(String.format(Locale.getDefault(), "Precio Normal: $%,.0f", precioSeleccionado));
+            tvPrecioBase.setText(String.format(Locale.getDefault(), "Precio Normal: %s", CotizadorEngine.formatearMoneda(res.getPrecioBase())));
             tvPrecioBase.setPaintFlags(tvPrecioBase.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
             tvBadgeDescuento.setVisibility(View.GONE);
             tvAhorro.setVisibility(View.GONE);
         }
 
-        tvPrecioFinal.setText(String.format(Locale.getDefault(), "$%,.0f", pFinal));
+        tvPrecioFinal.setText(CotizadorEngine.formatearMoneda(res.getPrecioFinal()));
     }
 
     private void configurarCatalogo() {
         rvCatalogo.setLayoutManager(new LinearLayoutManager(this));
-        adapterCatalogo = new CatalogAdapter(obtenerListaProductos(), new CatalogAdapter.OnProductoClickListener() {
+        adapterCatalogo = new CatalogAdapter(repository.obtenerListaItems(), new CatalogAdapter.OnProductoClickListener() {
             @Override
             public void onCotizar(ProductoItem producto) {
-                // Acción rápida: traspasar al cotizador y seleccionarlo automáticamente
                 bottomNavigation.setSelectedItemId(R.id.nav_calculator);
                 autoProducto.setText(producto.getNombre(), false);
                 seleccionarProducto(producto.getNombre());
+                if (scrollCotizador != null) {
+                    scrollCotizador.post(() -> scrollCotizador.scrollTo(0, 0));
+                }
+                autoProducto.clearFocus();
+                hideKeyboard();
             }
 
             @Override
@@ -358,7 +357,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void actualizarListaCatalogo() {
         if (adapterCatalogo != null) {
-            adapterCatalogo.actualizarDatos(obtenerListaProductos());
+            adapterCatalogo.actualizarDatos(repository.obtenerListaItems());
             String query = etBuscarCatalogo.getText() != null ? etBuscarCatalogo.getText().toString() : "";
             adapterCatalogo.filtrar(query);
             actualizarTextoContador();
@@ -366,26 +365,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void actualizarTextoContador() {
+        if (tvContadorProductos == null) return;
         int count = adapterCatalogo != null ? adapterCatalogo.getItemCountFiltrado() : 0;
         tvContadorProductos.setText(String.format(Locale.getDefault(), "%d productos en el catálogo", count));
     }
 
-    private List<ProductoItem> obtenerListaProductos() {
-        List<ProductoItem> lista = new ArrayList<>();
-        List<String> nombres = new ArrayList<>(catalogoPrecios.keySet());
-        Collections.sort(nombres);
-
-        for (String nombre : nombres) {
-            double desc = catalogoDescuentos.getOrDefault(nombre, 0.0);
-            HashMap<String, Double> plazas = catalogoPrecios.get(nombre);
-            lista.add(new ProductoItem(nombre, desc, plazas));
-        }
-        return lista;
-    }
-
-    /**
-     * Muestra un diálogo estilo BottomSheet para ingresar o editar un producto con sugerencias rápidas.
-     */
     private void mostrarDialogoProducto(String productoAEditar, String plazaSugerida) {
         BottomSheetDialog dialog = new BottomSheetDialog(this);
         View view = LayoutInflater.from(this).inflate(R.layout.dialog_add_product, null);
@@ -400,7 +384,7 @@ public class MainActivity extends AppCompatActivity {
         MaterialButton btnGuardar = view.findViewById(R.id.btnDialogGuardar);
         MaterialButton btnEliminar = view.findViewById(R.id.btnDialogEliminar);
 
-        boolean esEdicion = (productoAEditar != null && !productoAEditar.trim().isEmpty() && catalogoPrecios.containsKey(productoAEditar));
+        boolean esEdicion = (productoAEditar != null && !productoAEditar.trim().isEmpty() && repository.existeProducto(productoAEditar));
 
         String[] plazasArray = {"1.0", "1.5", "2.0", "2.5", "3.0", "King", "Super King", "Única"};
         ArrayAdapter<String> adapterPlazas = new ArrayAdapter<>(this,
@@ -409,7 +393,7 @@ public class MainActivity extends AppCompatActivity {
         autoPlaza.setThreshold(0);
         autoPlaza.setOnClickListener(v -> autoPlaza.showDropDown());
 
-        HashMap<String, Double> plazasDelProducto = esEdicion ? catalogoPrecios.get(productoAEditar) : null;
+        HashMap<String, Double> plazasDelProducto = esEdicion ? repository.obtenerPlazas(productoAEditar) : null;
 
         if (esEdicion) {
             tvTitulo.setText("Editar Producto");
@@ -417,18 +401,16 @@ public class MainActivity extends AppCompatActivity {
             btnGuardar.setText("Actualizar Producto");
             etNombre.setText(productoAEditar);
 
-            double dctoActual = catalogoDescuentos.getOrDefault(productoAEditar, 0.0);
+            double dctoActual = repository.obtenerDescuento(productoAEditar);
             etDcto.setText(String.format(Locale.US, "%.0f", dctoActual));
 
             btnEliminar.setVisibility(View.VISIBLE);
             btnEliminar.setOnClickListener(v -> {
-                new androidx.appcompat.app.AlertDialog.Builder(this)
+                new AlertDialog.Builder(this)
                         .setTitle("¿Eliminar producto?")
                         .setMessage("¿Deseas eliminar \"" + productoAEditar + "\" del catálogo?")
                         .setPositiveButton("Eliminar", (dInterface, which) -> {
-                            catalogoPrecios.remove(productoAEditar);
-                            catalogoDescuentos.remove(productoAEditar);
-                            guardarEnPreferencias();
+                            repository.eliminarProducto(productoAEditar);
                             actualizarAdaptadorProductos();
                             actualizarListaCatalogo();
 
@@ -476,17 +458,16 @@ public class MainActivity extends AppCompatActivity {
             autoPlaza.setText("1.5", false);
         }
 
-        // Al cambiar de plaza sugerida o escribirse, autocompletar precio si ya existe para este producto
         Runnable actualizarPrecioParaPlaza = () -> {
             String pl = autoPlaza.getText() != null ? autoPlaza.getText().toString().trim() : "";
             String prodActual = etNombre.getText() != null ? etNombre.getText().toString().trim() : "";
-            if (catalogoPrecios.containsKey(prodActual)) {
-                HashMap<String, Double> mapP = catalogoPrecios.get(prodActual);
+            if (repository.existeProducto(prodActual)) {
+                HashMap<String, Double> mapP = repository.obtenerPlazas(prodActual);
                 if (mapP != null && mapP.containsKey(pl)) {
                     etPrecio.setText(String.format(Locale.US, "%.0f", mapP.get(pl)));
                 }
-            } else if (esEdicion && catalogoPrecios.containsKey(productoAEditar)) {
-                HashMap<String, Double> mapP = catalogoPrecios.get(productoAEditar);
+            } else if (esEdicion && repository.existeProducto(productoAEditar)) {
+                HashMap<String, Double> mapP = repository.obtenerPlazas(productoAEditar);
                 if (mapP != null && mapP.containsKey(pl)) {
                     etPrecio.setText(String.format(Locale.US, "%.0f", mapP.get(pl)));
                 }
@@ -530,30 +511,12 @@ public class MainActivity extends AppCompatActivity {
                 double precio = Double.parseDouble(precioStr);
                 double dcto = Double.parseDouble(dctoStr.replace(",", "."));
 
-                if (esEdicion && !productoAEditar.equals(nombreNuevo)) {
-                    HashMap<String, Double> mapViejo = catalogoPrecios.remove(productoAEditar);
-                    catalogoDescuentos.remove(productoAEditar);
-                    if (mapViejo == null) mapViejo = new HashMap<>();
-                    mapViejo.put(plaza, precio);
-                    catalogoPrecios.put(nombreNuevo, mapViejo);
-                    catalogoDescuentos.put(nombreNuevo, dcto);
+                repository.guardarOEditarProducto(productoAEditar, nombreNuevo, plaza, precio, dcto);
 
-                    if (productoSeleccionado.equals(productoAEditar)) {
-                        productoSeleccionado = nombreNuevo;
-                    }
-                } else {
-                    if (!catalogoPrecios.containsKey(nombreNuevo)) {
-                        catalogoPrecios.put(nombreNuevo, new HashMap<>());
-                    }
-                    catalogoPrecios.get(nombreNuevo).put(plaza, precio);
-                    catalogoDescuentos.put(nombreNuevo, dcto);
-                }
-
-                guardarEnPreferencias();
                 actualizarAdaptadorProductos();
                 actualizarListaCatalogo();
 
-                if (productoSeleccionado.equals(nombreNuevo)) {
+                if (productoSeleccionado.equals(nombreNuevo) || (productoAEditar != null && productoAEditar.equals(productoSeleccionado))) {
                     seleccionarProducto(nombreNuevo);
                 }
 
@@ -573,119 +536,110 @@ public class MainActivity extends AppCompatActivity {
         if (getCurrentFocus() != null) imm.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
     }
 
-    /**
-     * Guarda el catálogo modificado en SharedPreferences para que persista al cerrar la app.
-     */
-    private void guardarEnPreferencias() {
-        try {
-            JSONArray arr = new JSONArray();
-            for (String prod : catalogoPrecios.keySet()) {
-                JSONObject obj = new JSONObject();
-                obj.put("nombre", prod);
-                obj.put("descuento", catalogoDescuentos.getOrDefault(prod, 0.0));
+    private void actualizarEstadoNubeVisual() {
+        if (tvEstadoNube == null) return;
+        String ultimaSync = syncManager.getUltimaSincronizacion();
 
-                JSONObject plazasObj = new JSONObject();
-                HashMap<String, Double> mapPlazas = catalogoPrecios.get(prod);
-                if (mapPlazas != null) {
-                    for (String pl : mapPlazas.keySet()) {
-                        plazasObj.put(pl, mapPlazas.get(pl));
-                    }
-                }
-                obj.put("plazas", plazasObj);
-                arr.put(obj);
+        if (syncManager.tieneUrlConfigurada()) {
+            tvEstadoNube.setVisibility(View.VISIBLE);
+            if (!ultimaSync.isEmpty()) {
+                tvEstadoNube.setText("☁️ Azure: " + ultimaSync);
+            } else {
+                tvEstadoNube.setText("☁️ Nube Azure conectada");
             }
-
-            SharedPreferences sp = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-            sp.edit().putString(KEY_CUSTOM_CATALOG, arr.toString()).apply();
-        } catch (Exception ignored) {}
+        } else {
+            tvEstadoNube.setVisibility(View.GONE);
+        }
     }
 
-    private void inicializarCatalogo() {
-        SharedPreferences sp = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        String customJson = sp.getString(KEY_CUSTOM_CATALOG, null);
+    private void ejecutarSincronizacion(boolean silencioso) {
+        if (!syncManager.tieneUrlConfigurada()) {
+            if (!silencioso) {
+                mostrarDialogoConfigurarUrlNube();
+            }
+            return;
+        }
 
-        if (customJson != null && !customJson.isEmpty()) {
-            try {
-                JSONArray arr = new JSONArray(customJson);
-                for (int i = 0; i < arr.length(); i++) {
-                    JSONObject obj = arr.getJSONObject(i);
-                    String nombre = obj.getString("nombre");
-                    double dcto = obj.getDouble("descuento");
-                    JSONObject plazasObj = obj.getJSONObject("plazas");
-
-                    HashMap<String, Double> map = new HashMap<>();
-                    Iterator<String> keys = plazasObj.keys();
-                    while (keys.hasNext()) {
-                        String key = keys.next();
-                        map.put(key, plazasObj.getDouble(key));
-                    }
-                    catalogoPrecios.put(nombre, map);
-                    catalogoDescuentos.put(nombre, dcto);
+        syncManager.sincronizar(new AzureSyncManager.SyncCallback() {
+            @Override
+            public void onIniciando() {
+                btnSincronizarNube.setEnabled(false);
+                btnSincronizarNube.setText("Conectando...");
+                if (tvEstadoNube != null) {
+                    tvEstadoNube.setVisibility(View.VISIBLE);
+                    tvEstadoNube.setText("⏳ Conectando con Azure...");
                 }
-                return;
-            } catch (Exception ignored) {}
-        }
-
-        // Si no hay datos guardados, cargar catálogo base Cannon
-        String[][] datosRaw = {
-            {"QUILT Maria - 1.5", "72990", "30"}, {"QUILT Maria - 2.0", "92990", "30"}, {"QUILT Maria - 2.5", "102990", "30"}, {"QUILT Maria - 3.0", "112990", "30"},
-            {"SAB 1000 H RS - 2.0", "229990", "20"}, {"SAB 1000 H RS - 2.5", "249990", "20"}, {"SAB 1000 H RS - 3.0", "269990", "20"},
-            {"Fda P. OXF - 1.5", "69990", "50"}, {"Fda P. OXF - 2.0", "79990", "50"}, {"Fda P. OXF - 2.5", "89990", "50"},
-            {"Fda P. LAUREN - 1.5", "64990", "50"}, {"Fda P. LAUREN - 2.0", "84990", "50"}, {"Fda P. LAUREN - 2.5", "94990", "50"}, {"Fda P. LAUREN - 3.0", "104990", "50"},
-            {"Fda P. 180 HILOS - 1.5", "69990", "50"}, {"Fda P. 180 HILOS - 2.0", "89990", "50"}, {"Fda P. 180 HILOS - 2.5", "99990", "50"}, {"Fda P. 180 HILOS - 3.0", "109990", "50"},
-            {"Fda P. JACQUARD - 2.0", "98990", "50"}, {"Fda P. JACQUARD - 2.5", "108990", "50"}, {"Fda P. JACQUARD - 3.0", "118990", "50"},
-            {"Fda P. BORDADA - 1.5", "69990", "50"}, {"Fda P. BORDADA - 2.0", "89990", "50"}, {"Fda P. BORDADA - 2.5", "99990", "50"}, {"Fda P. BORDADA - 3.0", "109990", "50"},
-            {"Fda P. LINO - 1.5", "94990", "50"}, {"Fda P. LINO - 2.0", "124990", "50"}, {"Fda P. LINO - 2.5", "134990", "50"},
-            {"Fda P. ALMA - 1.5", "42990", "50"}, {"Fda P. ALMA - 2.0", "49990", "50"}, {"Fda P. ALMA - 2.5", "54990", "50"}, {"Fda P. ALMA - 3.0", "59990", "50"},
-            {"Fda P. Verona - 1.5", "34990", "50"}, {"Fda P. Verona - 2.0", "39990", "50"}, {"Fda P. Verona - 2.5", "42990", "50"},
-            {"VIVO - 1.0", "19990", "40"}, {"VIVO - 1.5", "22990", "40"}, {"VIVO - 2.0", "26990", "40"}, {"VIVO - 2.5", "32990", "40"}, {"VIVO - 3.0", "34990", "40"},
-            {"TENCEL - 1.5", "44990", "40"}, {"TENCEL - 2.0", "54990", "40"}, {"TENCEL - 2.5", "64990", "40"}, {"TENCEL - 3.0", "74990", "40"},
-            {"TOPPER - 1.5", "89990", "30"}, {"TOPPER - 2.0", "99990", "30"}, {"TOPPER - 2.5", "119990", "30"}, {"TOPPER - 3.0", "129990", "30"},
-            {"TOPPER PLUM - 1.5", "149990", "30"}, {"TOPPER PLUM - 2.0", "199990", "30"}, {"TOPPER PLUM - 2.5", "209990", "30"}, {"TOPPER PLUM - 3.0", "219990", "30"},
-            {"ALMOHADAS Visco CRISTAL", "62990", "30"}, {"ALMOHADAS Visco ZEN", "57990", "31"}, {"ALMOHADAS Visco GREEN", "59990", "40"},
-            {"ALMOHADAS Visco ERGO PILOW", "34990", "30"}, {"ALMOHADAS Visco GEL ROYAL", "79990", "40"}, {"ALMOHADAS Visco Gel Cannon", "49990", "40"},
-            {"ALMOHADAS Visco Dream", "26990", "41"},
-            {"COPPER - 2.0", "44990", "33"}, {"COPPER - 2.5", "54990", "30"},
-            {"SAB ESTMP 200H - 1.5", "44990", "20"}, {"SAB ESTMP 200H - 2.0", "56990", "20"}, {"SAB ESTMP 200H - 2.5", "64990", "20"}, {"SAB ESTMP 200H - 3.0", "69990", "20"},
-            {"SAB LISA 200H 100% - 1.0", "44990", "50"}, {"SAB LISA 200H 100% - 1.5", "46990", "50"}, {"SAB LISA 200H 100% - 2.0", "59990", "50"}, {"SAB LISA 200H 100% - 2.5", "69990", "50"}, {"SAB LISA 200H 100% - 3.0", "74990", "50"},
-            {"SAB RS 200H Bordadas - 1.5", "36990", "50"}, {"SAB RS 200H Bordadas - 2.0", "46990", "50"}, {"SAB RS 200H Bordadas - 2.5", "56990", "50"},
-            {"SAB RS 200H ESTAMP - 1.5", "59990", "40"}, {"SAB RS 200H ESTAMP - 2.0", "69990", "40"}, {"SAB RS 200H ESTAMP - 2.5", "79990", "40"}, {"SAB RS 200H ESTAMP - 3.0", "89990", "40"},
-            {"SAB 300H RS - 1.5", "69990", "40"}, {"SAB 300H RS - 2.0", "79990", "40"}, {"SAB 300H RS - 2.5", "89990", "40"}, {"SAB 300H RS - 3.0", "99990", "40"},
-            {"SAB 300H CN - 1.5", "74990", "40"}, {"SAB 300H CN - 2.0", "86990", "40"}, {"SAB 300H CN - 2.5", "96990", "40"}, {"SAB 300H CN - 3.0", "106990", "40"},
-            {"SAB 500 H CN - 1.5", "109990", "20"}, {"SAB 500 H CN - 2.0", "129990", "20"}, {"SAB 500 H CN - 2.5", "149990", "20"}, {"SAB 500 H CN - 3.0", "169990", "20"},
-            {"SAB 600 H RS - 2.0", "149990", "20"}, {"SAB 600 H RS - 2.5", "159990", "20"}, {"SAB 600 H RS - 3.0", "179990", "20"},
-            {"SAB 800 H RS - 2.0", "199990", "20"}, {"SAB 800 H RS - 2.5", "229990", "20"}, {"SAB 800 H RS - 3.0", "249990", "20"},
-            {"PLUMON ESTAMP - 1.5", "59990", "20"}, {"PLUMON ESTAMP - 2.0", "69990", "20"}, {"PLUMON ESTAMP - 2.5", "79990", "20"}, {"PLUMON ESTAMP - 3.0", "84990", "20"},
-            {"PLUMON ESTAMP (2) - 1.5", "42990", "40"}, {"PLUMON ESTAMP (2) - 2.0", "52990", "40"}, {"PLUMON ESTAMP (2) - 2.5", "56990", "40"}, {"PLUMON ESTAMP (2) - 3.0", "64990", "40"},
-            {"Quilt Estampado - 1.5", "39990", "20"}, {"Quilt Estampado - 2.0", "49990", "20"}, {"Quilt Estampado - 2.5", "59990", "20"}, {"Quilt Estampado - 3.0", "69990", "20"},
-            {"Quilt Liso Moss - 1.5", "39990", "20"}, {"Quilt Liso Moss - 2.0", "49990", "20"}, {"Quilt Liso Moss - 2.5", "99990", "20"}, {"Quilt Liso Moss - 3.0", "109990", "20"},
-            {"QUILT VELVET STWSH - 1.5", "149990", "50"}, {"QUILT VELVET STWSH - 2.0", "159990", "50"}, {"QUILT VELVET STWSH - 2.5", "169990", "50"}, {"QUILT VELVET STWSH - 3.0", "179990", "50"},
-            {"QUILT MATELADO - 1.5", "39990", "40"}, {"QUILT MATELADO - 2.0", "49990", "40"}, {"QUILT MATELADO - 2.5", "59990", "40"}, {"QUILT MATELADO - 3.0", "69990", "40"},
-            {"Q. EC LEA - MAISON - 1.5", "39990", "50"}, {"Q. EC LEA - MAISON - 2.0", "49990", "50"}, {"Q. EC LEA - MAISON - 2.5", "59990", "50"}, {"Q. EC LEA - MAISON - 3.0", "69990", "50"},
-            {"QUILT RS GARDEN - 1.5", "89990", "50"}, {"QUILT RS GARDEN - 2.0", "109990", "50"}, {"QUILT RS GARDEN - 2.5", "119990", "50"}, {"QUILT RS GARDEN - 3.0", "129990", "50"},
-            {"QUILT NUIT RS - 1.5", "79990", "50"}, {"QUILT NUIT RS - 2.0", "99990", "50"}, {"QUILT NUIT RS - 2.5", "109990", "50"}, {"QUILT NUIT RS - 3.0", "119990", "50"},
-            {"Q. RS VENT WILLOW - 1.5", "96990", "50"}, {"Q. RS VENT WILLOW - 2.0", "122990", "50"}, {"Q. RS VENT WILLOW - 2.5", "132990", "50"}, {"Q. RS VENT WILLOW - 3.0", "142990", "50"}
-        };
-
-        for (String[] d : datosRaw) {
-            String fullNombre = d[0];
-            double precio = Double.parseDouble(d[1]);
-            double desc = Double.parseDouble(d[2]);
-
-            String nombreBase = fullNombre;
-            String plaza = "Única";
-
-            if (fullNombre.contains(" - ")) {
-                String[] partes = fullNombre.split(" - ");
-                nombreBase = partes[0].trim();
-                plaza = partes[1].trim();
             }
 
-            if (!catalogoPrecios.containsKey(nombreBase)) {
-                catalogoPrecios.put(nombreBase, new HashMap<>());
+            @Override
+            public void onSuccess(HashMap<String, HashMap<String, Double>> precios, HashMap<String, Double> descuentos, String horaSync) {
+                btnSincronizarNube.setEnabled(true);
+                btnSincronizarNube.setText("Sincronizar");
+
+                repository.actualizarCatalogoCompleto(precios, descuentos);
+                actualizarAdaptadorProductos();
+                actualizarListaCatalogo();
+
+                if (!productoSeleccionado.isEmpty() && repository.existeProducto(productoSeleccionado)) {
+                    seleccionarProducto(productoSeleccionado);
+                }
+
+                actualizarEstadoNubeVisual();
+                Toast.makeText(MainActivity.this, "✅ Catálogo sincronizado desde Azure (" + precios.size() + " productos)", Toast.LENGTH_LONG).show();
             }
-            catalogoPrecios.get(nombreBase).put(plaza, precio);
-            catalogoDescuentos.put(nombreBase, desc);
-        }
+
+            @Override
+            public void onError(String mensajeError, boolean esErrorConexion) {
+                btnSincronizarNube.setEnabled(true);
+                btnSincronizarNube.setText("Sincronizar");
+
+                if (esErrorConexion) {
+                    if (tvEstadoNube != null) {
+                        tvEstadoNube.setText("☁️ Catálogo local (Sin conexión)");
+                    }
+                    if (!silencioso) {
+                        Toast.makeText(MainActivity.this, "⚠️ Sin conexión a Azure. Usando catálogo local.", Toast.LENGTH_LONG).show();
+                    }
+                } else {
+                    if (tvEstadoNube != null) {
+                        tvEstadoNube.setText("⚠️ " + mensajeError);
+                    }
+                    Toast.makeText(MainActivity.this, mensajeError, Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+    }
+
+    private void mostrarDialogoConfigurarUrlNube() {
+        String urlActual = syncManager.getUrlConfigurada();
+
+        final TextInputEditText input = new TextInputEditText(this);
+        input.setHint("https://<tu-cuenta>.blob.core.windows.net/catalogo/precios_azure.json");
+        input.setText(urlActual);
+
+        FrameLayout container = new FrameLayout(this);
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+        );
+        params.leftMargin = (int) (20 * getResources().getDisplayMetrics().density);
+        params.rightMargin = (int) (20 * getResources().getDisplayMetrics().density);
+        input.setLayoutParams(params);
+        container.addView(input);
+
+        new AlertDialog.Builder(this)
+                .setTitle("☁️ Conexión Microsoft Azure")
+                .setMessage("Ingresa la URL del archivo precios_azure.json de tu contenedor en Azure Blob Storage:")
+                .setView(container)
+                .setPositiveButton("Guardar y Sincronizar", (d, w) -> {
+                    String nuevaUrl = input.getText() != null ? input.getText().toString().trim() : "";
+                    if (!nuevaUrl.isEmpty()) {
+                        syncManager.guardarUrl(nuevaUrl);
+                        actualizarEstadoNubeVisual();
+                        ejecutarSincronizacion(false);
+                    }
+                })
+                .setNegativeButton("Cancelar", null)
+                .show();
     }
 }
