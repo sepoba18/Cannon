@@ -81,37 +81,46 @@ public class AzureSyncManager {
                 URL url = new URL(urlNube);
                 conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("GET");
-                conn.setConnectTimeout(8000);
-                conn.setReadTimeout(8000);
-                conn.setRequestProperty("Accept", "application/json");
+                boolean esExcel = urlNube.toLowerCase(Locale.ROOT).contains(".xlsx");
+                if (esExcel) {
+                    conn.setRequestProperty("Accept", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, */*");
+                } else {
+                    conn.setRequestProperty("Accept", "application/json, */*");
+                }
 
                 int responseCode = conn.getResponseCode();
                 if (responseCode == 200) {
-                    reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8));
-                    StringBuilder response = new StringBuilder();
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        response.append(line);
-                    }
-
-                    JSONArray arr = new JSONArray(response.toString());
                     HashMap<String, HashMap<String, Double>> nuevosPrecios = new HashMap<>();
                     HashMap<String, Double> nuevosDescuentos = new HashMap<>();
 
-                    for (int i = 0; i < arr.length(); i++) {
-                        JSONObject obj = arr.getJSONObject(i);
-                        String nombre = obj.getString("nombre");
-                        double dcto = obj.optDouble("descuento", 0.0);
-                        JSONObject plazasObj = obj.getJSONObject("plazas");
-
-                        HashMap<String, Double> mapPlazas = new HashMap<>();
-                        Iterator<String> keys = plazasObj.keys();
-                        while (keys.hasNext()) {
-                            String k = keys.next();
-                            mapPlazas.put(k, plazasObj.getDouble(k));
+                    if (esExcel) {
+                        ExcelCatalogParser.ResultadoExcel resExcel = ExcelCatalogParser.parsear(context, conn.getInputStream());
+                        nuevosPrecios.putAll(resExcel.precios);
+                        nuevosDescuentos.putAll(resExcel.descuentos);
+                    } else {
+                        reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8));
+                        StringBuilder response = new StringBuilder();
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            response.append(line);
                         }
-                        nuevosPrecios.put(nombre, mapPlazas);
-                        nuevosDescuentos.put(nombre, dcto);
+
+                        JSONArray arr = new JSONArray(response.toString());
+                        for (int i = 0; i < arr.length(); i++) {
+                            JSONObject obj = arr.getJSONObject(i);
+                            String nombre = obj.getString("nombre");
+                            double dcto = obj.optDouble("descuento", 0.0);
+                            JSONObject plazasObj = obj.getJSONObject("plazas");
+
+                            HashMap<String, Double> mapPlazas = new HashMap<>();
+                            Iterator<String> keys = plazasObj.keys();
+                            while (keys.hasNext()) {
+                                String k = keys.next();
+                                mapPlazas.put(k, plazasObj.getDouble(k));
+                            }
+                            nuevosPrecios.put(nombre, mapPlazas);
+                            nuevosDescuentos.put(nombre, dcto);
+                        }
                     }
 
                     SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
