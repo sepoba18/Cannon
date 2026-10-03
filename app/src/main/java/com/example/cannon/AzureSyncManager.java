@@ -79,16 +79,39 @@ public class AzureSyncManager {
             BufferedReader reader = null;
             try {
                 URL url = new URL(urlNube);
-                conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("GET");
-                boolean esExcel = urlNube.toLowerCase(Locale.ROOT).contains(".xlsx");
-                if (esExcel) {
-                    conn.setRequestProperty("Accept", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, */*");
-                } else {
-                    conn.setRequestProperty("Accept", "application/json, */*");
+                int redirects = 0;
+                int responseCode = -1;
+
+                while (redirects < 6) {
+                    conn = (HttpURLConnection) url.openConnection();
+                    conn.setInstanceFollowRedirects(true);
+                    conn.setRequestMethod("GET");
+                    conn.setConnectTimeout(10000);
+                    conn.setReadTimeout(10000);
+                    conn.setRequestProperty("Accept", "*/*");
+
+                    responseCode = conn.getResponseCode();
+                    if (responseCode == HttpURLConnection.HTTP_MOVED_PERM || 
+                        responseCode == HttpURLConnection.HTTP_MOVED_TEMP || 
+                        responseCode == 307 || responseCode == 308) {
+                        String location = conn.getHeaderField("Location");
+                        conn.disconnect();
+                        if (location != null && !location.isEmpty()) {
+                            url = new URL(location);
+                            redirects++;
+                            continue;
+                        }
+                    }
+                    break;
                 }
 
-                int responseCode = conn.getResponseCode();
+                String contentType = conn.getContentType() != null ? conn.getContentType().toLowerCase(Locale.ROOT) : "";
+                boolean esExcel = urlNube.toLowerCase(Locale.ROOT).contains(".xlsx") || 
+                                  url.toString().toLowerCase(Locale.ROOT).contains(".xlsx") ||
+                                  contentType.contains("spreadsheet") || 
+                                  contentType.contains("excel") ||
+                                  contentType.contains("octet-stream");
+
                 if (responseCode == 200) {
                     HashMap<String, HashMap<String, Double>> nuevosPrecios = new HashMap<>();
                     HashMap<String, Double> nuevosDescuentos = new HashMap<>();
@@ -135,9 +158,10 @@ public class AzureSyncManager {
                         }
                     });
                 } else {
+                    final int errCode = responseCode;
                     mainHandler.post(() -> {
                         if (callback != null) {
-                            callback.onError("Error de respuesta HTTP: " + responseCode, false);
+                            callback.onError("Error de respuesta HTTP: " + errCode, false);
                         }
                     });
                 }
