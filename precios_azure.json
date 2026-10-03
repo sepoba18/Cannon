@@ -1,1 +1,382 @@
-[{"nombre": "QUILT Maria", "descuento": 30.0, "plazas": {"1.5": 72990.0, "2.0": 92990.0, "2.5": 102990.0, "3.0": 112990.0}}, {"nombre": "SAB 1000 H RS", "descuento": 20.0, "plazas": {"2.0": 229990.0, "2.5": 249990.0, "3.0": 269990.0}}, {"nombre": "Fda P. OXF", "descuento": 50.0, "plazas": {"1.5": 69990.0, "2.0": 79990.0, "2.5": 89990.0}}, {"nombre": "Fda P. LAUREN", "descuento": 50.0, "plazas": {"1.5": 64990.0, "2.0": 84990.0, "2.5": 94990.0, "3.0": 104990.0}}, {"nombre": "Fda P. 180 HILOS", "descuento": 50.0, "plazas": {"1.5": 69990.0, "2.0": 89990.0, "2.5": 99990.0, "3.0": 109990.0}}, {"nombre": "VIVO", "descuento": 40.0, "plazas": {"1.0": 19990.0, "1.5": 22990.0, "2.0": 26990.0, "2.5": 32990.0, "3.0": 34990.0}}, {"nombre": "TENCEL", "descuento": 40.0, "plazas": {"1.5": 44990.0, "2.0": 54990.0, "2.5": 64990.0, "3.0": 74990.0}}, {"nombre": "TOPPER", "descuento": 30.0, "plazas": {"1.5": 89990.0, "2.0": 99990.0, "2.5": 119990.0, "3.0": 129990.0}}, {"nombre": "ALMOHADAS Visco CRISTAL", "descuento": 30.0, "plazas": {"Única": 62990.0}}, {"nombre": "ALMOHADAS Visco ZEN", "descuento": 31.0, "plazas": {"Única": 57990.0}}, {"nombre": "ALMOHADAS Visco GREEN", "descuento": 40.0, "plazas": {"Única": 59990.0}}]
+[
+  {
+    "nombre": "QUILT MATELADO",
+    "descuento": 20,
+    "plazas": {
+      "2.0": 49990,
+      "3.0": 69990,
+      "1.5": 39990,
+      "2.5": 59990
+    }
+  },
+  {
+    "nombre": "ALMOHADAS Visco Gel Cannon",
+    "descuento": 40,
+    "plazas": {
+      "Única": 49990
+    }
+  },
+  {
+    "nombre": "SAB 300H RS",
+    "descuento": 30,
+    "plazas": {
+      "2.0": 79990,
+      "3.0": 99990,
+      "1.5": 69990,
+      "2.5": 89990
+    }
+  },
+  {
+    "nombre": "VIVO",
+    "descuento": 50,
+    "plazas": {
+      "1.0": 19990,
+      "2.0": 26990,
+      "3.0": 34990,
+      "1.5": 22990,
+      "2.5": 32990
+    }
+  },
+  {
+    "nombre": "Quilt Liso Moss",
+    "descuento": 20,
+    "plazas": {
+      "2.0": 49990,
+      "3.0": 109990,
+      "1.5": 58990,
+      "2.5": 99990
+    }
+  },
+  {
+    "nombre": "Fda P. LINO",
+    "descuento": 30,
+    "plazas": {
+      "2.0": 124990,
+      "1.5": 94990,
+      "2.5": 134990
+    }
+  },
+  {
+    "nombre": "SAB 500 H CN",
+    "descuento": 30,
+    "plazas": {
+      "2.0": 129990,
+      "3.0": 169990,
+      "1.5": 109990,
+      "2.5": 149990
+    }
+  },
+  {
+    "nombre": "ALMOHADAS Visco CRISTAL",
+    "descuento": 30,
+    "plazas": {
+      "Única": 62990
+    }
+  },
+  {
+    "nombre": "Q. EC LEA",
+    "descuento": 50,
+    "plazas": {
+      "MAISON": 69990
+    }
+  },
+  {
+    "nombre": "SAB 1000 H RS",
+    "descuento": 20,
+    "plazas": {
+      "2.0": 229990,
+      "3.0": 269990,
+      "2.5": 249990
+    }
+  },
+  {
+    "nombre": "SAB 800 H RS",
+    "descuento": 30,
+    "plazas": {
+      "2.0": 199990,
+      "3.0": 249990,
+      "2.5": 229990
+    }
+  },
+  {
+    "nombre": "PLUMON ESTAMP (2)",
+    "descuento": 40,
+    "plazas": {
+      "2.0": 52990,
+      "3.0": 64990,
+      "1.5": 42990,
+      "2.5": 56990
+    }
+  },
+  {
+    "nombre": "Impermeable",
+    "descuento": 40,
+    "plazas": {
+      "2.0": 54990,
+      "3.0": 74990,
+      "1.5": 44990,
+      "2.5": 64990
+    }
+  },
+  {
+    "nombre": "QUILT Maria",
+    "descuento": 50,
+    "plazas": {
+      "2.0": 92990,
+      "3.0": 112990,
+      "1.5": 72990,
+      "2.5": 102990
+    }
+  },
+  {
+    "nombre": "ALMOHADAS Visco ZEN",
+    "descuento": 31,
+    "plazas": {
+      "Única": 57990
+    }
+  },
+  {
+    "nombre": "SAB LISA 200H 100%",
+    "descuento": 40,
+    "plazas": {
+      "1.0": 44990,
+      "2.0": 59990,
+      "3.0": 74990,
+      "1.5": 46990,
+      "2.5": 69990
+    }
+  },
+  {
+    "nombre": "QUILT NUIT RS",
+    "descuento": 50,
+    "plazas": {
+      "2.0": 99990,
+      "3.0": 119990,
+      "1.5": 79990,
+      "2.5": 109990
+    }
+  },
+  {
+    "nombre": "Fda P. 180 HILOS",
+    "descuento": 50,
+    "plazas": {
+      "2.0": 89990,
+      "3.0": 109990,
+      "1.5": 69990,
+      "2.5": 99990
+    }
+  },
+  {
+    "nombre": "TOPPER PLUM",
+    "descuento": 30,
+    "plazas": {
+      "2.0": 199990,
+      "3.0": 219990,
+      "1.5": 149990,
+      "2.5": 209990
+    }
+  },
+  {
+    "nombre": "Fda P. Verona",
+    "descuento": 30,
+    "plazas": {
+      "2.0": 78990,
+      "3.0": 98990,
+      "1.5": 68990,
+      "2.5": 88990
+    }
+  },
+  {
+    "nombre": "Almohada Copper",
+    "descuento": 30,
+    "plazas": {
+      "2.0": 44990,
+      "2.5": 54990
+    }
+  },
+  {
+    "nombre": "ALMOHADAS Visco Dream",
+    "descuento": 41,
+    "plazas": {
+      "Única": 26990
+    }
+  },
+  {
+    "nombre": "QUILT VELVET STWSH",
+    "descuento": 50,
+    "plazas": {
+      "2.0": 159990,
+      "3.0": 179990,
+      "1.5": 149990,
+      "2.5": 169990
+    }
+  },
+  {
+    "nombre": "SAB RS 200H ESTAMP",
+    "descuento": 40,
+    "plazas": {
+      "2.0": 69990,
+      "3.0": 89990,
+      "1.5": 59990,
+      "2.5": 79990
+    }
+  },
+  {
+    "nombre": "PLUMON ESTAMP",
+    "descuento": 20,
+    "plazas": {
+      "2.0": 69990,
+      "3.0": 84990,
+      "1.5": 59990,
+      "2.5": 79990
+    }
+  },
+  {
+    "nombre": "SAB 300H CN",
+    "descuento": 30,
+    "plazas": {
+      "2.0": 86990,
+      "3.0": 106990,
+      "1.5": 74990,
+      "2.5": 96990
+    }
+  },
+  {
+    "nombre": "ALMOHADAS Visco GEL ROYAL",
+    "descuento": 40,
+    "plazas": {
+      "Única": 79990
+    }
+  },
+  {
+    "nombre": "SAB 600 H RS",
+    "descuento": 30,
+    "plazas": {
+      "2.0": 149990,
+      "3.0": 179990,
+      "2.5": 159990
+    }
+  },
+  {
+    "nombre": "SAB ESTMP 200H",
+    "descuento": 20,
+    "plazas": {
+      "2.0": 56990,
+      "3.0": 69990,
+      "1.5": 44990,
+      "2.5": 64990
+    }
+  },
+  {
+    "nombre": "Quilt Estampado",
+    "descuento": 20,
+    "plazas": {
+      "2.0": 49990,
+      "3.0": 69990,
+      "1.5": 39990,
+      "2.5": 59990
+    }
+  },
+  {
+    "nombre": "Fda P. BORDADA",
+    "descuento": 50,
+    "plazas": {
+      "2.0": 89990,
+      "3.0": 109990,
+      "1.5": 69990,
+      "2.5": 99990
+    }
+  },
+  {
+    "nombre": "Q. RS VENT WILLOW",
+    "descuento": 50,
+    "plazas": {
+      "2.0": 122990,
+      "3.0": 142990,
+      "1.5": 96990,
+      "2.5": 132990
+    }
+  },
+  {
+    "nombre": "Fda P. JACQUARD",
+    "descuento": 50,
+    "plazas": {
+      "2.0": 98990,
+      "3.0": 118990,
+      "2.5": 108990
+    }
+  },
+  {
+    "nombre": "Fda P. LAUREN",
+    "descuento": 50,
+    "plazas": {
+      "2.0": 84990,
+      "3.0": 104990,
+      "1.5": 64990,
+      "2.5": 94990
+    }
+  },
+  {
+    "nombre": "Fda P. ALMA",
+    "descuento": 40,
+    "plazas": {
+      "2.0": 84990,
+      "3.0": 104990,
+      "1.5": 64990,
+      "2.5": 94990
+    }
+  },
+  {
+    "nombre": "QUILT RS GARDEN",
+    "descuento": 50,
+    "plazas": {
+      "2.0": 109990,
+      "3.0": 129990,
+      "1.5": 89990,
+      "2.5": 119990
+    }
+  },
+  {
+    "nombre": "Fda P. OXF",
+    "descuento": 50,
+    "plazas": {
+      "2.0": 79990,
+      "1.5": 69990,
+      "2.5": 89990
+    }
+  },
+  {
+    "nombre": "TOPPER",
+    "descuento": 20,
+    "plazas": {
+      "2.0": 99990,
+      "3.0": 129990,
+      "1.5": 89990,
+      "2.5": 119990
+    }
+  },
+  {
+    "nombre": "ALMOHADAS Visco GREEN",
+    "descuento": 33,
+    "plazas": {
+      "Única": 59990
+    }
+  },
+  {
+    "nombre": "ALMOHADAS Visco ERGO PILOW",
+    "descuento": 14,
+    "plazas": {
+      "Única": 34990
+    }
+  },
+  {
+    "nombre": "Quilt Tomasa",
+    "descuento": 20,
+    "plazas": {
+      "2.0": 89990,
+      "3.0": 109990,
+      "1.5": 69990,
+      "2.5": 99990
+    }
+  }
+]
