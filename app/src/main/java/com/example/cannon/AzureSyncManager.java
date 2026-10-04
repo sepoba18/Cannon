@@ -38,13 +38,19 @@ public class AzureSyncManager {
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
+    public static final String DEFAULT_AZURE_URL = "https://sebacannon2.blob.core.windows.net/catalogo/Plantilla_Catalogo_Cannon_12.xlsx";
+
     public AzureSyncManager(Context context) {
         this.context = context.getApplicationContext();
     }
 
     public String getUrlConfigurada() {
         SharedPreferences sp = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        return sp.getString(KEY_AZURE_URL, "");
+        String url = sp.getString(KEY_AZURE_URL, "");
+        if (url.isEmpty() || url.endsWith("/Plantilla_Catalogo_Cannon.xlsx")) {
+            return DEFAULT_AZURE_URL;
+        }
+        return url;
     }
 
     public void guardarUrl(String url) {
