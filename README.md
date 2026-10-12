@@ -1,4 +1,4 @@
-# 🛏️ Cannon: Catálogo Comercial & Cotizador Inteligente
+# Cannon: Catálogo Comercial y Cotizador Inteligente
 
 <p align="center">
   <img src="https://img.shields.io/badge/Plataforma-Android-3DDC84?style=for-the-badge&logo=android&logoColor=white" alt="Android" />
@@ -11,26 +11,26 @@ Aplicación móvil nativa para Android diseñada para el sector retail de descan
 
 ---
 
-## ✨ Características Principales
+## Características Principales
 
-- ⚡ **Cotizador Interactivo en Tiempo Real:**
+- **Cotizador Interactivo en Tiempo Real:**
   - Búsqueda predictiva con `AutoCompleteTextView`.
   - Selección dinámica de plazas mediante `ChipGroup` ("1 Plaza", "1.5 Plazas", "2 Plazas", "King", "Super King").
   - Aplicación de descuentos rápidos (10%, 20%, 30% o porcentaje personalizado).
   - Cálculo instantáneo de **Precio Base**, **Descuento Aplicado (%)**, **Ahorro ($ CLP)** y **Precio Final ($ CLP)**.
 
-- 📋 **Catálogo Visual y Filtros Avanzados:**
+- **Catálogo Visual y Filtros Avanzados:**
   - Listado fluido basado en `RecyclerView` con tarjetas individuales por producto.
   - Buscador reactivo en vivo con `TextWatcher`.
   - Filtro por categorías con chips interactivos (*Todos*, *Colchones*, *Plumones*, *Almohadas*, *Sábanas*).
 
-- ➕ **Gestión y Registro de Nuevos Productos:**
+- **Gestión y Registro de Nuevos Productos:**
   - Modal interactivo con `BottomSheetDialog` para dar de alta productos y fijar precios por plaza.
   - Persistencia de catálogo personalizado mediante `SharedPreferences` serializado en JSON.
 
 ---
 
-## 🏛️ Estructura del Proyecto
+## Estructura del Proyecto
 
 ```text
 app/src/main/java/com/example/cannon/
@@ -41,7 +41,7 @@ app/src/main/java/com/example/cannon/
 
 ---
 
-## 🛠️ Stack Tecnológico
+## Stack Tecnológico
 
 - **Lenguaje:** Java 17
 - **UI Toolkit:** Android Views (XML) con componentes Material 3 (`MaterialCardView`, `ChipGroup`, `ExtendedFloatingActionButton`, `BottomSheetDialog`)
@@ -50,7 +50,7 @@ app/src/main/java/com/example/cannon/
 
 ---
 
-## 🚀 Instalación y Compilación
+## Instalación y Compilación
 
 1. Clonar el repositorio:
    ```bash
@@ -63,5 +63,5 @@ app/src/main/java/com/example/cannon/
 
 ---
 
-## 👨‍💻 Autor
+## Autor
 Desarrollado por **Sebastián Orellana** ([@sepoba18](https://github.com/sepoba18)).
