@@ -19,6 +19,7 @@ public class CatalogRepository {
     private static final String PREFS_NAME = "CannonPrefs";
     private static final String KEY_CUSTOM_CATALOG = "custom_catalog";
     private static final String KEY_CUSTOM_SKUS = "custom_skus";
+    private static final java.util.concurrent.ExecutorService ioExecutor = java.util.concurrent.Executors.newSingleThreadExecutor();
 
     private final Context context;
     private final HashMap<String, HashMap<String, Double>> catalogoPrecios = new HashMap<>();
@@ -139,42 +140,56 @@ public class CatalogRepository {
     }
 
     public synchronized void guardarEnCache() {
-        try {
-            JSONArray arr = new JSONArray();
-            for (String prod : catalogoPrecios.keySet()) {
-                JSONObject obj = new JSONObject();
-                obj.put("nombre", prod);
-                obj.put("descuento", catalogoDescuentos.getOrDefault(prod, 0.0));
+        // Snapshot en memoria (<1ms bajo synchronized)
+        final HashMap<String, HashMap<String, Double>> snapshotPrecios = new HashMap<>();
+        for (String prod : catalogoPrecios.keySet()) {
+            HashMap<String, Double> mapPlazas = catalogoPrecios.get(prod);
+            if (mapPlazas != null) {
+                snapshotPrecios.put(prod, new HashMap<>(mapPlazas));
+            }
+        }
+        final HashMap<String, Double> snapshotDescuentos = new HashMap<>(catalogoDescuentos);
+        final HashMap<String, ExcelCatalogParser.SkuInfo> snapshotSkus = new HashMap<>(mapaSkus);
 
-                JSONObject plazasObj = new JSONObject();
-                HashMap<String, Double> mapPlazas = catalogoPrecios.get(prod);
-                if (mapPlazas != null) {
-                    for (String pl : mapPlazas.keySet()) {
-                        plazasObj.put(pl, mapPlazas.get(pl));
+        // Serialización JSON y guardado en disco en hilo de fondo para evitar ANR
+        ioExecutor.execute(() -> {
+            try {
+                JSONArray arr = new JSONArray();
+                for (String prod : snapshotPrecios.keySet()) {
+                    JSONObject obj = new JSONObject();
+                    obj.put("nombre", prod);
+                    obj.put("descuento", snapshotDescuentos.getOrDefault(prod, 0.0));
+
+                    JSONObject plazasObj = new JSONObject();
+                    HashMap<String, Double> mapPlazas = snapshotPrecios.get(prod);
+                    if (mapPlazas != null) {
+                        for (String pl : mapPlazas.keySet()) {
+                            plazasObj.put(pl, mapPlazas.get(pl));
+                        }
+                    }
+                    obj.put("plazas", plazasObj);
+                    arr.put(obj);
+                }
+
+                // Guardar SKUs en caché
+                JSONObject skusObj = new JSONObject();
+                for (String sku : snapshotSkus.keySet()) {
+                    ExcelCatalogParser.SkuInfo info = snapshotSkus.get(sku);
+                    if (info != null) {
+                        JSONObject item = new JSONObject();
+                        item.put("producto", info.producto);
+                        item.put("plaza", info.plaza);
+                        skusObj.put(sku, item);
                     }
                 }
-                obj.put("plazas", plazasObj);
-                arr.put(obj);
-            }
 
-            // Guardar SKUs en caché
-            JSONObject skusObj = new JSONObject();
-            for (String sku : mapaSkus.keySet()) {
-                ExcelCatalogParser.SkuInfo info = mapaSkus.get(sku);
-                if (info != null) {
-                    JSONObject item = new JSONObject();
-                    item.put("producto", info.producto);
-                    item.put("plaza", info.plaza);
-                    skusObj.put(sku, item);
-                }
-            }
-
-            SharedPreferences sp = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-            sp.edit()
-                    .putString(KEY_CUSTOM_CATALOG, arr.toString())
-                    .putString(KEY_CUSTOM_SKUS, skusObj.toString())
-                    .apply();
-        } catch (Exception ignored) {}
+                SharedPreferences sp = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+                sp.edit()
+                        .putString(KEY_CUSTOM_CATALOG, arr.toString())
+                        .putString(KEY_CUSTOM_SKUS, skusObj.toString())
+                        .apply();
+            } catch (Exception ignored) {}
+        });
     }
 
     public synchronized List<ProductoItem> obtenerListaItems() {
@@ -208,7 +223,8 @@ public class CatalogRepository {
     }
 
     public synchronized HashMap<String, Double> obtenerPlazas(String nombre) {
-        return catalogoPrecios.get(nombre);
+        HashMap<String, Double> plazas = catalogoPrecios.get(nombre);
+        return plazas != null ? new HashMap<>(plazas) : new HashMap<>();
     }
 
     public synchronized double obtenerDescuento(String nombre) {

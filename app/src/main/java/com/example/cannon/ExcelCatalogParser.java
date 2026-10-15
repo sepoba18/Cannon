@@ -259,7 +259,9 @@ public class ExcelCatalogParser {
                             resultado.precios.put(filaProducto, new HashMap<>());
                         }
                         resultado.precios.get(filaProducto).put(filaPlaza, filaPrecio);
-                        resultado.descuentos.put(filaProducto, filaDescuento);
+                        if (filaDescuento > 0 || !resultado.descuentos.containsKey(filaProducto)) {
+                            resultado.descuentos.put(filaProducto, filaDescuento);
+                        }
                         if (!filaCategoria.isEmpty()) {
                             resultado.categorias.put(filaProducto, filaCategoria);
                         }
