@@ -18,10 +18,21 @@ import java.util.zip.ZipFile;
  */
 public class ExcelCatalogParser {
 
+    public static class SkuInfo {
+        public final String producto;
+        public final String plaza;
+
+        public SkuInfo(String producto, String plaza) {
+            this.producto = producto;
+            this.plaza = plaza;
+        }
+    }
+
     public static class ResultadoExcel {
         public final HashMap<String, HashMap<String, Double>> precios = new HashMap<>();
         public final HashMap<String, Double> descuentos = new HashMap<>();
         public final HashMap<String, String> categorias = new HashMap<>();
+        public final HashMap<String, SkuInfo> skuMap = new HashMap<>();
     }
 
     public static ResultadoExcel parsear(Context context, InputStream inputStream) throws Exception {
@@ -49,6 +60,16 @@ public class ExcelCatalogParser {
 
             // 3. Buscar la primera hoja de datos (sheet1.xml / Catálogo)
             ZipEntry sheetEntry = zipFile.getEntry("xl/worksheets/sheet1.xml");
+            if (sheetEntry == null) {
+                java.util.Enumeration<? extends ZipEntry> entries = zipFile.entries();
+                while (entries.hasMoreElements()) {
+                    ZipEntry entry = entries.nextElement();
+                    if (entry.getName().startsWith("xl/worksheets/sheet") && entry.getName().endsWith(".xml")) {
+                        sheetEntry = entry;
+                        break;
+                    }
+                }
+            }
             if (sheetEntry == null) {
                 throw new IllegalStateException("No se encontró la hoja de cálculo en el archivo Excel");
             }
@@ -78,9 +99,10 @@ public class ExcelCatalogParser {
         while (eventType != XmlPullParser.END_DOCUMENT) {
             String tagName = parser.getName();
             if (eventType == XmlPullParser.START_TAG) {
-                if ("t".equalsIgnoreCase(tagName)) {
-                    insideT = true;
+                if ("si".equalsIgnoreCase(tagName)) {
                     currentText.setLength(0);
+                } else if ("t".equalsIgnoreCase(tagName)) {
+                    insideT = true;
                 }
             } else if (eventType == XmlPullParser.TEXT) {
                 if (insideT) {
@@ -111,6 +133,7 @@ public class ExcelCatalogParser {
         boolean insideV = false;
         boolean insideT = false;
 
+        String filaSku = "";
         String filaProducto = "";
         String filaCategoria = "";
         String filaPlaza = "Única";
@@ -118,12 +141,13 @@ public class ExcelCatalogParser {
         double filaDescuento = 0.0;
         int currentFilaNum = 0;
 
-        // Mapeo dinámico de columnas (por defecto: A=Producto, B=Categoría, C=Plaza, D=Precio, E=Descuento)
-        String colProducto = "A";
-        String colCategoria = "B";
-        String colPlaza = "C";
-        String colPrecio = "D";
-        String colDescuento = "E";
+        // Mapeo dinámico de columnas (detectado en fila 1 o fallback por defecto)
+        String colSku = "";
+        String colProducto = "";
+        String colCategoria = "";
+        String colPlaza = "";
+        String colPrecio = "";
+        String colDescuento = "";
 
         while (eventType != XmlPullParser.END_DOCUMENT) {
             String tagName = parser.getName();
@@ -141,6 +165,15 @@ public class ExcelCatalogParser {
                         currentFilaNum++;
                     }
 
+                    if (currentFilaNum > 1 && colProducto.isEmpty()) {
+                        colProducto = "B";
+                        colCategoria = "C";
+                        colPlaza = "D";
+                        colPrecio = "E";
+                        colDescuento = "F";
+                    }
+
+                    filaSku = "";
                     filaProducto = "";
                     filaCategoria = "";
                     filaPlaza = "Única";
@@ -181,7 +214,9 @@ public class ExcelCatalogParser {
                     // Fila 1: Detectar automáticamente el orden de las columnas por el nombre del encabezado
                     if (currentFilaNum == 1) {
                         String headerUpper = valorFinal.toUpperCase();
-                        if (headerUpper.contains("PRODUCTO") || headerUpper.contains("ARTICULO") || headerUpper.contains("NOMBRE")) {
+                        if (headerUpper.contains("SKU") || headerUpper.contains("CODIGO") || headerUpper.contains("CÓDIGO")) {
+                            colSku = col;
+                        } else if (headerUpper.contains("PRODUCTO") || headerUpper.contains("ARTICULO") || headerUpper.contains("NOMBRE")) {
                             colProducto = col;
                         } else if (headerUpper.contains("CATEGOR")) {
                             colCategoria = col;
@@ -194,19 +229,21 @@ public class ExcelCatalogParser {
                         }
                     } else {
                         // Filas de datos (2 en adelante)
-                        if (col.equalsIgnoreCase(colProducto)) {
+                        if (!colSku.isEmpty() && col.equalsIgnoreCase(colSku)) {
+                            filaSku = valorFinal;
+                        } else if (!colProducto.isEmpty() && col.equalsIgnoreCase(colProducto)) {
                             filaProducto = valorFinal;
-                        } else if (col.equalsIgnoreCase(colCategoria)) {
+                        } else if (!colCategoria.isEmpty() && col.equalsIgnoreCase(colCategoria)) {
                             filaCategoria = valorFinal;
-                        } else if (col.equalsIgnoreCase(colPlaza)) {
+                        } else if (!colPlaza.isEmpty() && col.equalsIgnoreCase(colPlaza)) {
                             filaPlaza = valorFinal.isEmpty() ? "Única" : valorFinal;
-                        } else if (col.equalsIgnoreCase(colPrecio)) {
+                        } else if (!colPrecio.isEmpty() && col.equalsIgnoreCase(colPrecio)) {
                             try {
                                 filaPrecio = Double.parseDouble(limpiarNumero(valorFinal));
                             } catch (NumberFormatException e) {
                                 filaPrecio = 0.0;
                             }
-                        } else if (col.equalsIgnoreCase(colDescuento)) {
+                        } else if (!colDescuento.isEmpty() && col.equalsIgnoreCase(colDescuento)) {
                             try {
                                 double d = Double.parseDouble(limpiarNumero(valorFinal));
                                 filaDescuento = (d > 0.0 && d <= 1.0) ? (d * 100.0) : d;
@@ -226,6 +263,9 @@ public class ExcelCatalogParser {
                         if (!filaCategoria.isEmpty()) {
                             resultado.categorias.put(filaProducto, filaCategoria);
                         }
+                        if (!filaSku.isEmpty()) {
+                            resultado.skuMap.put(filaSku.trim().toUpperCase(), new SkuInfo(filaProducto, filaPlaza));
+                        }
                     }
                 }
             }
@@ -236,10 +276,32 @@ public class ExcelCatalogParser {
     private static String limpiarNumero(String texto) {
         if (texto == null) return "0";
         String limpio = texto.replace("$", "").replace("%", "").replace(" ", "").trim();
-        if (limpio.contains(".") && !limpio.contains(",")) {
-            int dotIdx = limpio.indexOf('.');
-            if (limpio.length() - dotIdx == 4) {
+        if (limpio.isEmpty()) return "0";
+
+        if (limpio.contains(".") && limpio.contains(",")) {
+            int primerPunto = limpio.indexOf('.');
+            int primerComa = limpio.indexOf(',');
+            if (primerPunto < primerComa) {
+                limpio = limpio.replace(".", "").replace(",", ".");
+            } else {
+                limpio = limpio.replace(",", "");
+            }
+        } else if (limpio.contains(",")) {
+            int comaIdx = limpio.indexOf(',');
+            if (limpio.length() - comaIdx == 4 && !limpio.substring(comaIdx + 1).contains(",")) {
+                limpio = limpio.replace(",", "");
+            } else {
+                limpio = limpio.replace(",", ".");
+            }
+        } else if (limpio.contains(".")) {
+            int primerPunto = limpio.indexOf('.');
+            int ultimoPunto = limpio.lastIndexOf('.');
+            if (primerPunto != ultimoPunto) {
                 limpio = limpio.replace(".", "");
+            } else {
+                if (limpio.length() - primerPunto == 4) {
+                    limpio = limpio.replace(".", "");
+                }
             }
         }
         return limpio;

@@ -18,10 +18,12 @@ public class CatalogRepository {
 
     private static final String PREFS_NAME = "CannonPrefs";
     private static final String KEY_CUSTOM_CATALOG = "custom_catalog";
+    private static final String KEY_CUSTOM_SKUS = "custom_skus";
 
     private final Context context;
     private final HashMap<String, HashMap<String, Double>> catalogoPrecios = new HashMap<>();
     private final HashMap<String, Double> catalogoDescuentos = new HashMap<>();
+    private final HashMap<String, ExcelCatalogParser.SkuInfo> mapaSkus = new HashMap<>();
 
     public CatalogRepository(Context context) {
         this.context = context.getApplicationContext();
@@ -50,11 +52,27 @@ public class CatalogRepository {
                     catalogoPrecios.put(nombre, map);
                     catalogoDescuentos.put(nombre, dcto);
                 }
-                return;
             } catch (Exception ignored) {}
+        } else {
+            cargarCatalogoBase();
         }
 
-        cargarCatalogoBase();
+        // Cargar SKUs guardados en caché
+        String skusJson = sp.getString(KEY_CUSTOM_SKUS, null);
+        if (skusJson != null && !skusJson.isEmpty()) {
+            try {
+                JSONObject obj = new JSONObject(skusJson);
+                Iterator<String> keys = obj.keys();
+                while (keys.hasNext()) {
+                    String sku = keys.next();
+                    JSONObject item = obj.getJSONObject(sku);
+                    mapaSkus.put(sku, new ExcelCatalogParser.SkuInfo(
+                            item.getString("producto"),
+                            item.getString("plaza")
+                    ));
+                }
+            } catch (Exception ignored) {}
+        }
     }
 
     private void cargarCatalogoBase() {
@@ -139,8 +157,23 @@ public class CatalogRepository {
                 arr.put(obj);
             }
 
+            // Guardar SKUs en caché
+            JSONObject skusObj = new JSONObject();
+            for (String sku : mapaSkus.keySet()) {
+                ExcelCatalogParser.SkuInfo info = mapaSkus.get(sku);
+                if (info != null) {
+                    JSONObject item = new JSONObject();
+                    item.put("producto", info.producto);
+                    item.put("plaza", info.plaza);
+                    skusObj.put(sku, item);
+                }
+            }
+
             SharedPreferences sp = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-            sp.edit().putString(KEY_CUSTOM_CATALOG, arr.toString()).apply();
+            sp.edit()
+                    .putString(KEY_CUSTOM_CATALOG, arr.toString())
+                    .putString(KEY_CUSTOM_SKUS, skusObj.toString())
+                    .apply();
         } catch (Exception ignored) {}
     }
 
@@ -209,12 +242,35 @@ public class CatalogRepository {
         guardarEnCache();
     }
 
-    public synchronized void actualizarCatalogoCompleto(HashMap<String, HashMap<String, Double>> nuevosPrecios, HashMap<String, Double> nuevosDescuentos) {
+    public synchronized void actualizarCatalogoCompleto(
+            HashMap<String, HashMap<String, Double>> nuevosPrecios,
+            HashMap<String, Double> nuevosDescuentos,
+            HashMap<String, ExcelCatalogParser.SkuInfo> nuevosSkus) {
         catalogoPrecios.clear();
         catalogoPrecios.putAll(nuevosPrecios);
         catalogoDescuentos.clear();
         catalogoDescuentos.putAll(nuevosDescuentos);
+        if (nuevosSkus != null) {
+            mapaSkus.clear();
+            mapaSkus.putAll(nuevosSkus);
+        }
         guardarEnCache();
+    }
+
+    public synchronized void actualizarCatalogoCompleto(
+            HashMap<String, HashMap<String, Double>> nuevosPrecios,
+            HashMap<String, Double> nuevosDescuentos) {
+        actualizarCatalogoCompleto(nuevosPrecios, nuevosDescuentos, null);
+    }
+
+    public synchronized ExcelCatalogParser.SkuInfo buscarPorSku(String sku) {
+        if (sku == null || sku.trim().isEmpty()) return null;
+        String limpio = sku.trim().toUpperCase();
+        return mapaSkus.get(limpio);
+    }
+
+    public synchronized int totalSkus() {
+        return mapaSkus.size();
     }
 
     public int totalProductos() {

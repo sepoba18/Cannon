@@ -30,7 +30,7 @@ public class AzureSyncManager {
 
     public interface SyncCallback {
         void onIniciando();
-        void onSuccess(HashMap<String, HashMap<String, Double>> precios, HashMap<String, Double> descuentos, String horaSync);
+        void onSuccess(HashMap<String, HashMap<String, Double>> precios, HashMap<String, Double> descuentos, HashMap<String, ExcelCatalogParser.SkuInfo> skuMap, String horaSync);
         void onError(String mensajeError, boolean esErrorConexion);
     }
 
@@ -38,7 +38,7 @@ public class AzureSyncManager {
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
-    public static final String DEFAULT_AZURE_URL = "https://sebacannon2.blob.core.windows.net/catalogo/Plantilla_Catalogo_Cannon_12.xlsx";
+    public static final String DEFAULT_AZURE_URL = "https://sebacannon2.blob.core.windows.net/catalogo/Precios_Cyber_Day.xlsx";
 
     public AzureSyncManager(Context context) {
         this.context = context.getApplicationContext();
@@ -47,7 +47,10 @@ public class AzureSyncManager {
     public String getUrlConfigurada() {
         SharedPreferences sp = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         String url = sp.getString(KEY_AZURE_URL, "");
-        if (url.isEmpty() || url.endsWith("/Plantilla_Catalogo_Cannon.xlsx")) {
+        if (url.isEmpty() || 
+            url.toLowerCase(Locale.ROOT).contains(".json") || 
+            url.toLowerCase(Locale.ROOT).contains("plantilla_catalogo_cannon")) {
+            guardarUrl(DEFAULT_AZURE_URL);
             return DEFAULT_AZURE_URL;
         }
         return url;
@@ -72,6 +75,13 @@ public class AzureSyncManager {
         if (urlNube.isEmpty()) {
             if (callback != null) {
                 callback.onError("No hay URL de Azure configurada.", false);
+            }
+            return;
+        }
+
+        if (!urlNube.toLowerCase(Locale.ROOT).startsWith("https://")) {
+            if (callback != null) {
+                callback.onError("Seguridad: La URL de sincronización debe utilizar HTTPS cifrado.", false);
             }
             return;
         }
@@ -103,6 +113,9 @@ public class AzureSyncManager {
                         String location = conn.getHeaderField("Location");
                         conn.disconnect();
                         if (location != null && !location.isEmpty()) {
+                            if (!location.toLowerCase(Locale.ROOT).startsWith("https://")) {
+                                throw new SecurityException("Bloqueada redirección insegura a protocolo HTTP no cifrado.");
+                            }
                             url = new URL(location);
                             redirects++;
                             continue;
@@ -121,11 +134,13 @@ public class AzureSyncManager {
                 if (responseCode == 200) {
                     HashMap<String, HashMap<String, Double>> nuevosPrecios = new HashMap<>();
                     HashMap<String, Double> nuevosDescuentos = new HashMap<>();
+                    HashMap<String, ExcelCatalogParser.SkuInfo> nuevosSkus = new HashMap<>();
 
                     if (esExcel) {
                         ExcelCatalogParser.ResultadoExcel resExcel = ExcelCatalogParser.parsear(context, conn.getInputStream());
                         nuevosPrecios.putAll(resExcel.precios);
                         nuevosDescuentos.putAll(resExcel.descuentos);
+                        nuevosSkus.putAll(resExcel.skuMap);
                     } else {
                         reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8));
                         StringBuilder response = new StringBuilder();
@@ -160,7 +175,7 @@ public class AzureSyncManager {
 
                     mainHandler.post(() -> {
                         if (callback != null) {
-                            callback.onSuccess(nuevosPrecios, nuevosDescuentos, horaSync);
+                            callback.onSuccess(nuevosPrecios, nuevosDescuentos, nuevosSkus, horaSync);
                         }
                     });
                 } else {
@@ -172,9 +187,11 @@ public class AzureSyncManager {
                     });
                 }
             } catch (Exception e) {
+                android.util.Log.e("AzureSyncManager", "Error durante sincronización", e);
+                final String detalle = e.getMessage() != null ? e.getMessage() : "Error de conexión o archivo";
                 mainHandler.post(() -> {
                     if (callback != null) {
-                        callback.onError("No se pudo conectar a la nube Azure.", true);
+                        callback.onError("Error al sincronizar: " + detalle, true);
                     }
                 });
             } finally {
@@ -186,5 +203,11 @@ public class AzureSyncManager {
                 }
             }
         });
+    }
+
+    public void shutdown() {
+        if (!executor.isShutdown()) {
+            executor.shutdown();
+        }
     }
 }

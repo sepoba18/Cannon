@@ -1,24 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="primary">#0A192F</color>
-    <color name="primary_brand">#1E3A8A</color>
-    <color name="primary_light">#3B82F6</color>
-    <color name="primary_dark">#07111E</color>
+    <!-- Paleta Corporativa Cannon Home -->
+    <color name="cannon_navy">#1F4E79</color>
+    <color name="cannon_navy_dark">#0E294B</color>
+    <color name="cannon_navy_light">#2E6CA4</color>
+    <color name="cannon_navy_surface">#EBF2F7</color>
+    
+    <!-- Rojo Acento Cannon (Logotipo y Ofertas) -->
+    <color name="cannon_red">#C00000</color>
+    <color name="cannon_red_dark">#990000</color>
+    <color name="cannon_red_light">#FEE2E2</color>
+    <color name="cannon_red_border">#FECACA</color>
+
+    <!-- Compatibilidad y Sistema de Diseño Material 3 -->
+    <color name="primary">#1F4E79</color>
+    <color name="primary_brand">#1F4E79</color>
+    <color name="primary_light">#2E6CA4</color>
+    <color name="primary_dark">#0E294B</color>
+    
     <color name="secondary">#059669</color>
     <color name="secondary_light">#D1FAE5</color>
-    <color name="discount_badge">#DC2626</color>
+    <color name="secondary_dark">#047857</color>
+
+    <!-- Badges de Descuento y Ahorro -->
+    <color name="discount_badge">#C00000</color>
     <color name="discount_badge_light">#FEE2E2</color>
+    <color name="discount_badge_border">#FCA5A5</color>
+    <color name="saving_text">#047857</color>
+    <color name="saving_bg">#DCFCE7</color>
+
+    <!-- Superficies y Fondos Limpios -->
     <color name="background">#F8FAFC</color>
     <color name="surface">#FFFFFF</color>
     <color name="surface_variant">#F1F5F9</color>
-    <color name="text_primary">#0F172A</color>
-    <color name="text_secondary">#64748B</color>
-    <color name="text_tertiary">#94A3B8</color>
+    <color name="surface_card_selected">#F0F7FF</color>
+    <color name="card_stroke">#E2E8F0</color>
     <color name="divider">#E2E8F0</color>
     <color name="chip_bg">#F1F5F9</color>
-    <color name="card_stroke">#E2E8F0</color>
+
+    <!-- Tipografía de Alto Contraste -->
+    <color name="text_primary">#0F172A</color>
+    <color name="text_secondary">#475569</color>
+    <color name="text_tertiary">#94A3B8</color>
+    <color name="text_on_navy">#FFFFFF</color>
+    
+    <!-- Estados y Utilitarios -->
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
-    <color name="saving_text">#047857</color>
     <color name="error">#DC2626</color>
+    <color name="cloud_sync_badge">#15803D</color>
+    <color name="cloud_sync_bg">#DCFCE7</color>
 </resources>

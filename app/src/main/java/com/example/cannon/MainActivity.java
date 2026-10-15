@@ -13,6 +13,7 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+import androidx.activity.result.ActivityResultLauncher;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -24,6 +25,8 @@ import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import com.google.android.material.textfield.TextInputEditText;
+import com.journeyapps.barcodescanner.ScanContract;
+import com.journeyapps.barcodescanner.ScanOptions;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -42,6 +45,18 @@ public class MainActivity extends AppCompatActivity {
     private BottomNavigationView bottomNavigation;
     private ExtendedFloatingActionButton fabAgregarProducto;
     private MaterialButton btnSincronizarNube;
+    private MaterialButton btnEscanearSku, btnEscanearSkuCatalogo;
+
+    // Lanzador del Escáner de Códigos de Barras / QR con Cámara
+    private final ActivityResultLauncher<ScanOptions> barcodeLauncher = registerForActivityResult(
+            new ScanContract(),
+            result -> {
+                if (result.getContents() != null) {
+                    String skuEscaneado = result.getContents().trim();
+                    procesarSkuEscaneado(skuEscaneado);
+                }
+            }
+    );
 
     // Vistas Cotizador
     private AutoCompleteTextView autoProducto;
@@ -121,6 +136,17 @@ public class MainActivity extends AppCompatActivity {
             return true;
         });
         actualizarEstadoNubeVisual();
+
+        // Botones de Escaneo de SKU con Cámara
+        btnEscanearSku = findViewById(R.id.btnEscanearSku);
+        if (btnEscanearSku != null) {
+            btnEscanearSku.setOnClickListener(v -> iniciarEscaneoCamara());
+        }
+
+        btnEscanearSkuCatalogo = findViewById(R.id.btnEscanearSkuCatalogo);
+        if (btnEscanearSkuCatalogo != null) {
+            btnEscanearSkuCatalogo.setOnClickListener(v -> iniciarEscaneoCamara());
+        }
 
         fabAgregarProducto.setOnClickListener(v -> mostrarDialogoProducto(null, null));
     }
@@ -572,11 +598,11 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onSuccess(HashMap<String, HashMap<String, Double>> precios, HashMap<String, Double> descuentos, String horaSync) {
+            public void onSuccess(HashMap<String, HashMap<String, Double>> precios, HashMap<String, Double> descuentos, HashMap<String, ExcelCatalogParser.SkuInfo> skuMap, String horaSync) {
                 btnSincronizarNube.setEnabled(true);
                 btnSincronizarNube.setText("Sincronizar");
 
-                repository.actualizarCatalogoCompleto(precios, descuentos);
+                repository.actualizarCatalogoCompleto(precios, descuentos, skuMap);
                 actualizarAdaptadorProductos();
                 actualizarListaCatalogo();
 
@@ -585,7 +611,8 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 actualizarEstadoNubeVisual();
-                Toast.makeText(MainActivity.this, "✅ Catálogo sincronizado desde Azure (" + precios.size() + " productos)", Toast.LENGTH_LONG).show();
+                int totalSkus = (skuMap != null) ? skuMap.size() : repository.totalSkus();
+                Toast.makeText(MainActivity.this, "✅ Catálogo sincronizado desde Azure (" + precios.size() + " productos, " + totalSkus + " SKUs)", Toast.LENGTH_LONG).show();
             }
 
             @Override
@@ -614,7 +641,7 @@ public class MainActivity extends AppCompatActivity {
         String urlActual = syncManager.getUrlConfigurada();
 
         final TextInputEditText input = new TextInputEditText(this);
-        input.setHint("https://<tu-cuenta>.blob.core.windows.net/catalogo/precios_azure.json");
+        input.setHint("https://<tu-cuenta>.blob.core.windows.net/catalogo/Precios_Cyber_Day.xlsx");
         input.setText(urlActual);
 
         FrameLayout container = new FrameLayout(this);
@@ -629,11 +656,15 @@ public class MainActivity extends AppCompatActivity {
 
         new AlertDialog.Builder(this)
                 .setTitle("☁️ Conexión Microsoft Azure")
-                .setMessage("Ingresa la URL del archivo precios_azure.json de tu contenedor en Azure Blob Storage:")
+                .setMessage("Ingresa la URL del archivo Excel (.xlsx) oficial en Azure Blob Storage:")
                 .setView(container)
                 .setPositiveButton("Guardar y Sincronizar", (d, w) -> {
                     String nuevaUrl = input.getText() != null ? input.getText().toString().trim() : "";
                     if (!nuevaUrl.isEmpty()) {
+                        if (!nuevaUrl.toLowerCase().startsWith("https://")) {
+                            Toast.makeText(this, "Seguridad: La URL debe comenzar con https://", Toast.LENGTH_LONG).show();
+                            return;
+                        }
                         syncManager.guardarUrl(nuevaUrl);
                         actualizarEstadoNubeVisual();
                         ejecutarSincronizacion(false);
@@ -641,5 +672,59 @@ public class MainActivity extends AppCompatActivity {
                 })
                 .setNegativeButton("Cancelar", null)
                 .show();
+    }
+
+    private void iniciarEscaneoCamara() {
+        ScanOptions options = new ScanOptions();
+        options.setPrompt("Apunta la cámara al código de barras o SKU del producto");
+        options.setBeepEnabled(true);
+        options.setOrientationLocked(false);
+        options.setBarcodeImageEnabled(false);
+        barcodeLauncher.launch(options);
+    }
+
+    private void procesarSkuEscaneado(String sku) {
+        if (sku == null || sku.trim().isEmpty()) return;
+        String skuLimpio = sku.trim().toUpperCase();
+        ExcelCatalogParser.SkuInfo info = repository.buscarPorSku(skuLimpio);
+
+        if (info != null) {
+            bottomNavigation.setSelectedItemId(R.id.nav_calculator);
+            scrollCotizador.setVisibility(View.VISIBLE);
+            layoutCatalogo.setVisibility(View.GONE);
+            fabAgregarProducto.setVisibility(View.GONE);
+            tvHeaderSubtitulo.setText("Cotizador y Calculadora de Descuentos");
+
+            autoProducto.setText(info.producto, false);
+            seleccionarProducto(info.producto);
+            seleccionarPlazaEspecifica(info.plaza);
+
+            Toast.makeText(this, "🎯 SKU: " + skuLimpio + " • " + info.plaza, Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(this, "⚠️ SKU '" + skuLimpio + "' no encontrado. Sincroniza desde Azure o busca por nombre.", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void seleccionarPlazaEspecifica(String plazaBuscada) {
+        if (plazaBuscada == null || plazaBuscada.isEmpty()) return;
+        for (int i = 0; i < chipGroupPlazas.getChildCount(); i++) {
+            View v = chipGroupPlazas.getChildAt(i);
+            if (v instanceof Chip) {
+                Chip chip = (Chip) v;
+                if (chip.getText().toString().equalsIgnoreCase(plazaBuscada)) {
+                    chip.setChecked(true);
+                    chip.performClick();
+                    return;
+                }
+            }
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (syncManager != null) {
+            syncManager.shutdown();
+        }
     }
 }
