@@ -678,7 +678,8 @@ public class MainActivity extends AppCompatActivity {
         ScanOptions options = new ScanOptions();
         options.setPrompt("Apunta la cámara al código de barras o SKU del producto");
         options.setBeepEnabled(true);
-        options.setOrientationLocked(false);
+        options.setOrientationLocked(true);
+        options.setCaptureActivity(PortraitCaptureActivity.class);
         options.setBarcodeImageEnabled(false);
         barcodeLauncher.launch(options);
     }
