@@ -7,13 +7,14 @@
 
     <!-- Contenido Principal -->
     <LinearLayout
+        android:id="@+id/layoutContenidoPrincipal"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:layout_marginBottom="64dp">
+        android:orientation="vertical">
 
         <!-- Header Moderno Institucional Cannon Home con Acento Rojo y Botón de Nube -->
         <LinearLayout
+            android:id="@+id/layoutHeader"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/bg_header_cannon"
@@ -21,7 +22,7 @@
             android:gravity="center_vertical"
             android:paddingHorizontal="20dp"
             android:paddingTop="26dp"
-            android:paddingBottom="22dp">
+            android:paddingBottom="18dp">
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -77,13 +78,19 @@
 
         </LinearLayout>
 
-        <!-- SECCIÓN 1: COTIZADOR / CALCULADORA -->
-        <androidx.core.widget.NestedScrollView
-            android:id="@+id/scrollCotizador"
+        <!-- Contenedor Flexible Central (Evita solapamiento con Navigation Bar en cualquier pantalla) -->
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:fillViewport="true"
-            android:visibility="visible">
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <!-- SECCIÓN 1: COTIZADOR / CALCULADORA -->
+            <androidx.core.widget.NestedScrollView
+                android:id="@+id/scrollCotizador"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:fillViewport="true"
+                android:visibility="visible">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -156,6 +163,13 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Toppers" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipCatCojines"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Cojines" />
                     </com.google.android.material.chip.ChipGroup>
                 </HorizontalScrollView>
 
@@ -306,7 +320,7 @@
                             android:textSize="12sp"
                             android:textStyle="bold" />
 
-                        <!-- Chips de descuentos directos -->
+                        <!-- Chips de descuentos directos (10, 20, 30, 40 y 50%) -->
                         <HorizontalScrollView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -319,6 +333,13 @@
                                 android:layout_height="wrap_content"
                                 app:singleLine="true"
                                 app:singleSelection="true">
+
+                                <com.google.android.material.chip.Chip
+                                    android:id="@+id/chipDcto10"
+                                    style="@style/Widget.Material3.Chip.Suggestion"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="10%" />
 
                                 <com.google.android.material.chip.Chip
                                     android:id="@+id/chipDcto20"
@@ -350,23 +371,48 @@
                             </com.google.android.material.chip.ChipGroup>
                         </HorizontalScrollView>
 
-                        <com.google.android.material.textfield.TextInputLayout
-                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        <!-- Cuadrito para escribir otro descuento a mano + Guardar % -->
+                        <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:hint="Descuento personalizado"
-                            app:boxCornerRadiusBottomEnd="12dp"
-                            app:boxCornerRadiusBottomStart="12dp"
-                            app:boxCornerRadiusTopEnd="12dp"
-                            app:boxCornerRadiusTopStart="12dp"
-                            app:suffixText="%">
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
 
-                            <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/etDescuento"
-                                android:layout_width="match_parent"
+                            <com.google.android.material.textfield.TextInputLayout
+                                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                                android:layout_width="0dp"
                                 android:layout_height="wrap_content"
-                                android:inputType="numberDecimal" />
-                        </com.google.android.material.textfield.TextInputLayout>
+                                android:layout_weight="1"
+                                android:hint="Otro % (a mano)"
+                                app:boxCornerRadiusBottomEnd="12dp"
+                                app:boxCornerRadiusBottomStart="12dp"
+                                app:boxCornerRadiusTopEnd="12dp"
+                                app:boxCornerRadiusTopStart="12dp"
+                                app:suffixText="%">
+
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:id="@+id/etDescuento"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:inputType="numberDecimal"
+                                    android:selectAllOnFocus="true" />
+                            </com.google.android.material.textfield.TextInputLayout>
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnFijarDescuentoLocal"
+                                style="@style/Widget.Material3.Button.TonalButton"
+                                android:layout_width="wrap_content"
+                                android:layout_height="54dp"
+                                android:layout_marginStart="8dp"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:text="Guardar %"
+                                android:textColor="@color/white"
+                                android:textSize="12sp"
+                                android:textStyle="bold"
+                                app:backgroundTint="@color/cannon_navy"
+                                app:cornerRadius="12dp" />
+                        </LinearLayout>
 
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
@@ -420,6 +466,16 @@
                                     android:text="Plaza: -"
                                     android:textColor="@color/text_secondary"
                                     android:textSize="13sp" />
+
+                                <TextView
+                                    android:id="@+id/tvResumenSku"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:text="SKU: -"
+                                    android:textColor="@color/text_tertiary"
+                                    android:textSize="11sp"
+                                    android:visibility="gone" />
                             </LinearLayout>
 
                             <com.google.android.material.button.MaterialButton
@@ -515,6 +571,264 @@
                                 android:textStyle="bold" />
                         </LinearLayout>
 
+                        <!-- Comparativa en Vivo: Sistema (XLSX) vs Internet (cannonhome.cl) -->
+                        <LinearLayout
+                            android:id="@+id/layoutComparativaWeb"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="14dp"
+                            android:background="@drawable/bg_web_compare_container"
+                            android:orientation="vertical"
+                            android:padding="14dp"
+                            android:visibility="gone">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="Comparativa Web (cannonhome.cl)"
+                                    android:textColor="@color/text_primary"
+                                    android:textSize="12sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:id="@+id/tvEstadoWeb"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:background="@drawable/bg_status_cloud"
+                                    android:text="Consultando..."
+                                    android:textColor="@color/cannon_navy"
+                                    android:textSize="10sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <TextView
+                                android:id="@+id/tvNombreWeb"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:ellipsize="end"
+                                android:maxLines="2"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="12sp"
+                                android:visibility="gone" />
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="10dp"
+                                android:baselineAligned="false"
+                                android:orientation="horizontal">
+
+                                <!-- Columna Sistema (XLSX) -->
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical"
+                                    android:paddingEnd="8dp">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="SISTEMA (XLSX)"
+                                        android:textColor="@color/text_tertiary"
+                                        android:textSize="10sp"
+                                        android:textStyle="bold" />
+
+                                    <TextView
+                                        android:id="@+id/tvCompSistemaFinal"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="2dp"
+                                        android:text="$0"
+                                        android:textColor="@color/cannon_navy_dark"
+                                        android:textSize="18sp"
+                                        android:textStyle="bold" />
+
+                                    <TextView
+                                        android:id="@+id/tvCompSistemaDcto"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="0% dcto"
+                                        android:textColor="@color/cannon_navy"
+                                        android:textSize="12sp"
+                                        android:textStyle="bold" />
+
+                                    <TextView
+                                        android:id="@+id/tvCompSistemaNormal"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="Normal: $0"
+                                        android:textColor="@color/text_secondary"
+                                        android:textSize="11sp" />
+                                </LinearLayout>
+
+                                <View
+                                    android:layout_width="1dp"
+                                    android:layout_height="match_parent"
+                                    android:background="@color/divider" />
+
+                                <!-- Columna Internet (cannonhome.cl) -->
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical"
+                                    android:paddingStart="10dp">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="WEB CANNON"
+                                        android:textColor="@color/text_tertiary"
+                                        android:textSize="10sp"
+                                        android:textStyle="bold" />
+
+                                    <TextView
+                                        android:id="@+id/tvCompWebFinal"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="2dp"
+                                        android:text="..."
+                                        android:textColor="@color/cannon_red"
+                                        android:textSize="18sp"
+                                        android:textStyle="bold" />
+
+                                    <TextView
+                                        android:id="@+id/tvCompWebDcto"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="-"
+                                        android:textColor="@color/cannon_red"
+                                        android:textSize="12sp"
+                                        android:textStyle="bold" />
+
+                                    <TextView
+                                        android:id="@+id/tvCompWebNormal"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="Normal: -"
+                                        android:textColor="@color/text_secondary"
+                                        android:textSize="11sp" />
+                                </LinearLayout>
+                            </LinearLayout>
+
+                            <TextView
+                                android:id="@+id/tvCompDiferencia"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:background="@drawable/bg_status_cloud"
+                                android:gravity="center"
+                                android:paddingHorizontal="8dp"
+                                android:paddingVertical="4dp"
+                                android:textColor="@color/cannon_navy_dark"
+                                android:textSize="11sp"
+                                android:textStyle="bold"
+                                android:visibility="gone" />
+
+                            <LinearLayout
+                                android:id="@+id/layoutAccionesWeb"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:orientation="vertical"
+                                android:visibility="gone">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginBottom="6dp"
+                                    android:text="Aplicar % de la web:"
+                                    android:textColor="#475569"
+                                    android:textSize="11sp"
+                                    android:textStyle="bold" />
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal">
+
+                                    <com.google.android.material.button.MaterialButton
+                                        android:id="@+id/btnUsarDescuentoWeb"
+                                        style="@style/Widget.Material3.Button.TonalButton"
+                                        android:layout_width="0dp"
+                                        android:layout_height="44dp"
+                                        android:layout_marginEnd="6dp"
+                                        android:layout_weight="1"
+                                        android:insetTop="0dp"
+                                        android:insetBottom="0dp"
+                                        android:paddingHorizontal="10dp"
+                                        android:text="Temporal"
+                                        android:textColor="@color/cannon_navy"
+                                        android:textSize="13sp"
+                                        android:textStyle="bold"
+                                        app:backgroundTint="@color/cannon_navy_surface"
+                                        app:cornerRadius="10dp" />
+
+                                    <com.google.android.material.button.MaterialButton
+                                        android:id="@+id/btnGuardarDescuentoWeb"
+                                        style="@style/Widget.Material3.Button"
+                                        android:layout_width="0dp"
+                                        android:layout_height="44dp"
+                                        android:layout_marginStart="6dp"
+                                        android:layout_weight="1"
+                                        android:insetTop="0dp"
+                                        android:insetBottom="0dp"
+                                        android:paddingHorizontal="10dp"
+                                        android:text="Fijo"
+                                        android:textColor="@color/white"
+                                        android:textSize="13sp"
+                                        android:textStyle="bold"
+                                        app:backgroundTint="@color/cannon_navy"
+                                        app:cornerRadius="10dp" />
+                                </LinearLayout>
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btnVerEnWeb"
+                                    style="@style/Widget.Material3.Button.OutlinedButton"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="44dp"
+                                    android:layout_marginTop="8dp"
+                                    android:insetTop="0dp"
+                                    android:insetBottom="0dp"
+                                    android:paddingHorizontal="12dp"
+                                    android:text="Entrar a la página web"
+                                    android:textColor="@color/cannon_navy"
+                                    android:textSize="13sp"
+                                    android:textStyle="bold"
+                                    app:cornerRadius="10dp"
+                                    app:strokeColor="@color/cannon_navy"
+                                    app:strokeWidth="1.5dp" />
+                            </LinearLayout>
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnRegistrarSkuDesdeWeb"
+                                style="@style/Widget.Material3.Button.TonalButton"
+                                android:layout_width="match_parent"
+                                android:layout_height="44dp"
+                                android:layout_marginTop="10dp"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:text="Agregar producto con este SKU"
+                                android:textColor="@color/cannon_navy"
+                                android:textSize="13sp"
+                                android:textStyle="bold"
+                                android:visibility="gone"
+                                app:backgroundTint="@color/cannon_navy_surface"
+                                app:cornerRadius="10dp"
+                                app:icon="@drawable/ic_add"
+                                app:iconGravity="textStart"
+                                app:iconTint="@color/cannon_navy" />
+                        </LinearLayout>
+
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
@@ -605,37 +919,38 @@
                 android:layout_height="0dp"
                 android:layout_weight="1"
                 android:clipToPadding="false"
-                android:paddingBottom="80dp" />
+                android:paddingBottom="88dp" />
 
         </LinearLayout>
 
+        <!-- Botón Flotante para Agregar Producto en Catálogo -->
+        <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+            android:id="@+id/fabAgregarProducto"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="16dp"
+            android:text="Nuevo Producto"
+            android:textColor="@color/white"
+            app:backgroundTint="@color/cannon_navy"
+            app:icon="@drawable/ic_add"
+            app:iconTint="@color/white"
+            android:visibility="gone" />
+
+        </FrameLayout>
+
+        <!-- Barra de Navegación Inferior Institucional -->
+        <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:id="@+id/bottomNavigation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/surface"
+            app:elevation="8dp"
+            app:itemIconTint="@color/cannon_navy"
+            app:itemTextColor="@color/cannon_navy"
+            app:menu="@menu/bottom_nav_menu" />
+
     </LinearLayout>
-
-    <!-- Botón Flotante para Agregar Producto en Catálogo -->
-    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-        android:id="@+id/fabAgregarProducto"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="80dp"
-        android:text="Nuevo Producto"
-        android:textColor="@color/white"
-        app:backgroundTint="@color/cannon_navy"
-        app:icon="@drawable/ic_add"
-        app:iconTint="@color/white"
-        android:visibility="gone" />
-
-    <!-- Barra de Navegación Inferior Institucional -->
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bottomNavigation"
-        android:layout_width="match_parent"
-        android:layout_height="64dp"
-        android:layout_gravity="bottom"
-        android:background="@color/surface"
-        app:elevation="8dp"
-        app:itemIconTint="@color/cannon_navy"
-        app:itemTextColor="@color/cannon_navy"
-        app:menu="@menu/bottom_nav_menu" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

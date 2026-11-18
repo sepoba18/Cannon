@@ -1,226 +1,238 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
     android:background="@drawable/bg_bottom_sheet"
-    android:padding="24dp">
+    android:fillViewport="true">
 
-    <View
-        android:layout_width="40dp"
-        android:layout_height="4dp"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginBottom="16dp"
-        android:background="@color/divider" />
-
-    <TextView
-        android:id="@+id/tvDialogTitulo"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Agregar o Editar Producto"
-        android:textColor="@color/text_primary"
-        android:textSize="20sp"
-        android:textStyle="bold" />
-
-    <TextView
-        android:id="@+id/tvDialogSubtitulo"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:layout_marginBottom="16dp"
-        android:text="Ingresa los datos para guardarlos en el catálogo"
-        android:textColor="@color/text_secondary"
-        android:textSize="13sp" />
-
-    <!-- Nombre del Producto -->
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/tilDialogNombre"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="12dp"
-        android:hint="Nombre del Producto"
-        app:boxCornerRadiusBottomEnd="10dp"
-        app:boxCornerRadiusBottomStart="10dp"
-        app:boxCornerRadiusTopEnd="10dp"
-        app:boxCornerRadiusTopStart="10dp">
+        android:orientation="vertical"
+        android:padding="22dp">
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etDialogNombre"
+        <View
+            android:layout_width="40dp"
+            android:layout_height="4dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="14dp"
+            android:background="@color/divider" />
+
+        <TextView
+            android:id="@+id/tvDialogTitulo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Agregar Producto"
+            android:textColor="@color/text_primary"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvDialogSubtitulo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="14dp"
+            android:text="Escribe el nombre, elige sus plazas y anota o escanea el SKU y precio de cada una"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp" />
+
+        <!-- Nombre del Producto y % Descuento -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="textCapWords" />
-    </com.google.android.material.textfield.TextInputLayout>
+            android:layout_marginBottom="14dp"
+            android:orientation="horizontal">
 
-    <!-- Plaza con sugerencias rápidas -->
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/tilDialogPlaza"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:hint="Plaza / Medida"
-        app:boxCornerRadiusBottomEnd="10dp"
-        app:boxCornerRadiusBottomStart="10dp"
-        app:boxCornerRadiusTopEnd="10dp"
-        app:boxCornerRadiusTopStart="10dp">
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilDialogNombre"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1.45"
+                android:hint="Nombre del producto"
+                app:boxCornerRadiusBottomEnd="10dp"
+                app:boxCornerRadiusBottomStart="10dp"
+                app:boxCornerRadiusTopEnd="10dp"
+                app:boxCornerRadiusTopStart="10dp">
 
-        <AutoCompleteTextView
-            android:id="@+id/autoDialogPlaza"
-            android:layout_width="match_parent"
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etDialogNombre"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textCapWords" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilDialogDescuento"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.65"
+                android:hint="% Dcto."
+                app:boxCornerRadiusBottomEnd="10dp"
+                app:boxCornerRadiusBottomStart="10dp"
+                app:boxCornerRadiusTopEnd="10dp"
+                app:boxCornerRadiusTopStart="10dp"
+                app:suffixText="%">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etDialogDescuento"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="numberDecimal"
+                    android:text="0" />
+            </com.google.android.material.textfield.TextInputLayout>
+        </LinearLayout>
+
+        <!-- Selector múltiple de plazas y medidas de almohada -->
+        <TextView
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:inputType="text" />
-    </com.google.android.material.textfield.TextInputLayout>
-
-    <!-- Chips de plazas rápidas -->
-    <HorizontalScrollView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="12dp"
-        android:scrollbars="none">
+            android:layout_marginBottom="6dp"
+            android:text="¿Qué plazas o medidas tiene? (toca para agregar o quitar)"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp"
+            android:textStyle="bold" />
 
         <com.google.android.material.chip.ChipGroup
             android:id="@+id/chipGroupPlazasSugeridas"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:singleLine="true">
+            android:layout_marginBottom="10dp">
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipPlaza10"
-                style="@style/Widget.Material3.Chip.Suggestion"
+                style="@style/Widget.Material3.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="1.0" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipPlaza15"
-                style="@style/Widget.Material3.Chip.Suggestion"
+                style="@style/Widget.Material3.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="1.5" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipPlaza20"
-                style="@style/Widget.Material3.Chip.Suggestion"
+                style="@style/Widget.Material3.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="2.0" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipPlaza25"
-                style="@style/Widget.Material3.Chip.Suggestion"
+                style="@style/Widget.Material3.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="2.5" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipPlaza30"
-                style="@style/Widget.Material3.Chip.Suggestion"
+                style="@style/Widget.Material3.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="3.0" />
 
             <com.google.android.material.chip.Chip
-                android:id="@+id/chipPlazaKing"
-                style="@style/Widget.Material3.Chip.Suggestion"
+                android:id="@+id/chipPlaza50x70"
+                style="@style/Widget.Material3.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="King" />
+                android:text="50 x 70" />
 
             <com.google.android.material.chip.Chip
-                android:id="@+id/chipPlazaSuperKing"
-                style="@style/Widget.Material3.Chip.Suggestion"
+                android:id="@+id/chipPlaza50x90"
+                style="@style/Widget.Material3.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Super King" />
+                android:text="50 x 90" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipPlazaUnica"
-                style="@style/Widget.Material3.Chip.Suggestion"
+                style="@style/Widget.Material3.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Única" />
         </com.google.android.material.chip.ChipGroup>
-    </HorizontalScrollView>
 
-    <!-- Fila de Precio y Descuento -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="20dp"
-        android:orientation="horizontal">
+        <!-- Botón Cojines: agrega tarjeta con tamaño a mano -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDialogCojines"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:layout_marginBottom="4dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:text="Cojines (poner medida a mano)"
+            android:textColor="@color/cannon_navy"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            app:backgroundTint="@color/cannon_navy_surface"
+            app:cornerRadius="10dp"
+            app:icon="@drawable/ic_add"
+            app:iconGravity="textStart"
+            app:iconTint="@color/cannon_navy" />
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/tilDialogPrecio"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-            android:layout_width="0dp"
+        <TextView
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1.2"
-            android:layout_marginEnd="8dp"
-            android:hint="Precio Base"
-            app:boxCornerRadiusBottomEnd="10dp"
-            app:boxCornerRadiusBottomStart="10dp"
-            app:boxCornerRadiusTopEnd="10dp"
-            app:boxCornerRadiusTopStart="10dp"
-            app:prefixText="$">
+            android:layout_marginBottom="12dp"
+            android:text="Ej. cojines: 50 x 50, 50 x 60, 30 x 50, 40 x 60"
+            android:textColor="@color/text_secondary"
+            android:textSize="11sp" />
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etDialogPrecio"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="number" />
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/tilDialogDescuento"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-            android:layout_width="0dp"
+        <!-- Lista dinámica de plazas/medidas con Precio y SKU -->
+        <TextView
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="0.8"
-            android:hint="% Dcto."
-            app:boxCornerRadiusBottomEnd="10dp"
-            app:boxCornerRadiusBottomStart="10dp"
-            app:boxCornerRadiusTopEnd="10dp"
-            app:boxCornerRadiusTopStart="10dp"
-            app:suffixText="%">
+            android:layout_marginBottom="8dp"
+            android:text="Precios y SKU por medida:"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp"
+            android:textStyle="bold" />
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etDialogDescuento"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="numberDecimal" />
-        </com.google.android.material.textfield.TextInputLayout>
+        <LinearLayout
+            android:id="@+id/layoutDialogPlazasContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="14dp"
+            android:orientation="vertical" />
+
+        <!-- Botón Guardar Institucional Cannon -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDialogGuardar"
+            android:layout_width="match_parent"
+            android:layout_height="54dp"
+            android:text="Guardar en Catálogo"
+            android:textColor="@color/white"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            app:backgroundTint="@color/cannon_navy"
+            app:cornerRadius="14dp"
+            app:icon="@drawable/ic_add"
+            app:iconGravity="textStart"
+            app:iconTint="@color/white" />
+
+        <!-- Botón Eliminar Producto (solo en edición) -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDialogEliminar"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Eliminar este producto del catálogo"
+            android:textColor="@color/error"
+            android:textSize="14sp"
+            android:visibility="gone"
+            app:icon="@drawable/ic_delete"
+            app:iconGravity="textStart"
+            app:iconTint="@color/error" />
+
     </LinearLayout>
-
-    <!-- Botón Guardar Institucional Cannon -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnDialogGuardar"
-        android:layout_width="match_parent"
-        android:layout_height="54dp"
-        android:text="Guardar en Catálogo"
-        android:textColor="@color/white"
-        android:textSize="15sp"
-        android:textStyle="bold"
-        app:backgroundTint="@color/cannon_navy"
-        app:cornerRadius="14dp"
-        app:icon="@drawable/ic_add"
-        app:iconGravity="textStart"
-        app:iconTint="@color/white" />
-
-    <!-- Botón Eliminar Producto (solo en edición) -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnDialogEliminar"
-        style="@style/Widget.Material3.Button.TextButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="Eliminar este producto del catálogo"
-        android:textColor="@color/error"
-        android:textSize="14sp"
-        app:icon="@drawable/ic_delete"
-        app:iconGravity="textStart"
-        app:iconTint="@color/error"
-        android:visibility="gone" />
-
-</LinearLayout>
+</androidx.core.widget.NestedScrollView>

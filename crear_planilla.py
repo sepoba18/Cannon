@@ -5,7 +5,9 @@ import json
 import shutil
 import os
 
-with open('precios_azure.json', 'r', encoding='utf-8') as f:
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+with open(os.path.join(BASE_DIR, 'precios_azure.json'), 'r', encoding='utf-8') as f:
     items = json.load(f)
 
 def get_cat(nombre):
@@ -96,11 +98,13 @@ ws.column_dimensions['E'].width = 18
 
 ws.auto_filter.ref = f'A1:E{row_idx - 1}'
 
-output_path = 'Plantilla_Catalogo_Cannon_12.xlsx'
+output_path = os.path.join(BASE_DIR, 'Plantilla_Catalogo_Cannon_12.xlsx')
 wb.save(output_path)
 print(f'Guardado localmente en: {output_path} con {row_idx - 1} filas')
 
-gdrive_path = r'G:\Mi unidad\Antigravity_Docs\Plantilla_Catalogo_Cannon_12.xlsx'
+gdrive_dir = r'G:\Mi unidad\Antigravity_Docs\03_Cannon_App'
 if os.path.exists(r'G:\Mi unidad\Antigravity_Docs'):
+    os.makedirs(gdrive_dir, exist_ok=True)
+    gdrive_path = os.path.join(gdrive_dir, 'Plantilla_Catalogo_Cannon_12.xlsx')
     shutil.copyfile(output_path, gdrive_path)
     print(f'Copia sincronizada a Google Drive: {gdrive_path}')

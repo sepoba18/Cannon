@@ -17,3 +17,4 @@ __pycache__/
 *.py
 check_blob*.xlsx
 downloaded_from_azure.xlsx
+app/src/main/java/graphify-out/

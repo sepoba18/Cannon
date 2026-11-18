@@ -7,8 +7,11 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 /**
  * Repositorio central de datos del catálogo Cannon.
@@ -16,44 +19,138 @@ import java.util.List;
  */
 public class CatalogRepository {
 
+    public static class PlazaEntrada {
+        public final String plaza;
+        public final double precio;
+        public final String sku;
+        public final Double descuento;
+
+        public PlazaEntrada(String plaza, double precio, String sku) {
+            this(plaza, precio, sku, null);
+        }
+
+        public PlazaEntrada(String plaza, double precio, String sku, Double descuento) {
+            this.plaza = (plaza != null && !plaza.trim().isEmpty()) ? plaza.trim() : "Única";
+            this.precio = precio;
+            this.sku = sku != null ? sku.trim().toUpperCase(Locale.ROOT) : "";
+            this.descuento = descuento;
+        }
+    }
+
+    private static class ManualProductData {
+        double descuento;
+        final HashMap<String, Double> plazas = new HashMap<>();
+        final HashMap<String, Double> descuentosPorPlaza = new HashMap<>();
+    }
+
     private static final String PREFS_NAME = "CannonPrefs";
     private static final String KEY_CUSTOM_CATALOG = "custom_catalog";
+    private static final String KEY_CUSTOM_CATALOG_BACKUP = "custom_catalog_backup";
     private static final String KEY_CUSTOM_SKUS = "custom_skus";
+    private static final String KEY_MANUAL_DISCOUNTS = "manual_discounts";
+    private static final String KEY_MANUAL_PRODUCTS = "manual_products";
+    private static final String KEY_MANUAL_SKUS = "manual_skus";
     private static final java.util.concurrent.ExecutorService ioExecutor = java.util.concurrent.Executors.newSingleThreadExecutor();
 
     private final Context context;
     private final HashMap<String, HashMap<String, Double>> catalogoPrecios = new HashMap<>();
     private final HashMap<String, Double> catalogoDescuentos = new HashMap<>();
+    private final HashMap<String, HashMap<String, Double>> catalogoDescuentosPorPlaza = new HashMap<>();
     private final HashMap<String, ExcelCatalogParser.SkuInfo> mapaSkus = new HashMap<>();
+    private final HashMap<String, String> mapaProductoPlazaASku = new HashMap<>();
+    private final HashMap<String, String> mapaProductoASkus = new HashMap<>();
+    private final HashMap<String, Double> descuentosManuales = new HashMap<>();
+    private final HashMap<String, ManualProductData> productosManuales = new HashMap<>();
+    private final HashMap<String, ExcelCatalogParser.SkuInfo> skusManuales = new HashMap<>();
 
     public CatalogRepository(Context context) {
         this.context = context.getApplicationContext();
         cargarDatos();
     }
 
+    CatalogRepository() {
+        this.context = null;
+        cargarCatalogoBase();
+        reconstruirIndicesSku();
+    }
+
+    private static void logError(String msg, Throwable t) {
+        try {
+            android.util.Log.e("CatalogRepository", msg, t);
+        } catch (Throwable ignored) {}
+    }
+
+    private static boolean parsearCatalogoJson(
+            String jsonStr,
+            HashMap<String, HashMap<String, Double>> outPrecios,
+            HashMap<String, Double> outDescuentos,
+            HashMap<String, HashMap<String, Double>> outDescuentosPorPlaza) {
+        if (jsonStr == null || jsonStr.isEmpty()) return false;
+        try {
+            JSONArray arr = new JSONArray(jsonStr);
+            for (int i = 0; i < arr.length(); i++) {
+                JSONObject obj = arr.getJSONObject(i);
+                String nombre = obj.optString("nombre", "").trim();
+                if (nombre.isEmpty()) continue;
+                double rawDcto = obj.optDouble("descuento", 0.0);
+                double dcto = Double.isFinite(rawDcto) ? Math.max(0.0, Math.min(100.0, rawDcto)) : 0.0;
+                JSONObject plazasObj = obj.optJSONObject("plazas");
+                if (plazasObj == null) continue;
+
+                HashMap<String, Double> map = new HashMap<>();
+                Iterator<String> keys = plazasObj.keys();
+                while (keys.hasNext()) {
+                    String key = keys.next();
+                    double precio = plazasObj.optDouble(key, -1.0);
+                    if (Double.isFinite(precio) && precio > 0.0) {
+                        map.put(key, precio);
+                    }
+                }
+                if (map.isEmpty()) continue;
+
+                outPrecios.put(nombre, map);
+                outDescuentos.put(nombre, dcto);
+
+                JSONObject dctoPlazasObj = obj.optJSONObject("descuentos_plazas");
+                if (dctoPlazasObj != null) {
+                    HashMap<String, Double> mapDcto = new HashMap<>();
+                    Iterator<String> dKeys = dctoPlazasObj.keys();
+                    while (dKeys.hasNext()) {
+                        String dk = dKeys.next();
+                        double dp = dctoPlazasObj.optDouble(dk, dcto);
+                        mapDcto.put(dk, Double.isFinite(dp) ? Math.max(0.0, Math.min(100.0, dp)) : dcto);
+                    }
+                    outDescuentosPorPlaza.put(nombre, mapDcto);
+                }
+            }
+            return !outPrecios.isEmpty();
+        } catch (Exception e) {
+            logError("Error parseando catálogo JSON", e);
+            return false;
+        }
+    }
+
     private void cargarDatos() {
         SharedPreferences sp = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         String customJson = sp.getString(KEY_CUSTOM_CATALOG, null);
+        String backupJson = sp.getString(KEY_CUSTOM_CATALOG_BACKUP, null);
 
-        if (customJson != null && !customJson.isEmpty()) {
-            try {
-                JSONArray arr = new JSONArray(customJson);
-                for (int i = 0; i < arr.length(); i++) {
-                    JSONObject obj = arr.getJSONObject(i);
-                    String nombre = obj.getString("nombre");
-                    double dcto = obj.getDouble("descuento");
-                    JSONObject plazasObj = obj.getJSONObject("plazas");
+        HashMap<String, HashMap<String, Double>> tmpPrecios = new HashMap<>();
+        HashMap<String, Double> tmpDescuentos = new HashMap<>();
+        HashMap<String, HashMap<String, Double>> tmpDescuentosPorPlaza = new HashMap<>();
 
-                    HashMap<String, Double> map = new HashMap<>();
-                    Iterator<String> keys = plazasObj.keys();
-                    while (keys.hasNext()) {
-                        String key = keys.next();
-                        map.put(key, plazasObj.getDouble(key));
-                    }
-                    catalogoPrecios.put(nombre, map);
-                    catalogoDescuentos.put(nombre, dcto);
-                }
-            } catch (Exception ignored) {}
+        boolean cargado = parsearCatalogoJson(customJson, tmpPrecios, tmpDescuentos, tmpDescuentosPorPlaza);
+        if (!cargado && backupJson != null && !backupJson.equals(customJson)) {
+            tmpPrecios.clear();
+            tmpDescuentos.clear();
+            tmpDescuentosPorPlaza.clear();
+            cargado = parsearCatalogoJson(backupJson, tmpPrecios, tmpDescuentos, tmpDescuentosPorPlaza);
+        }
+
+        if (cargado) {
+            catalogoPrecios.putAll(tmpPrecios);
+            catalogoDescuentos.putAll(tmpDescuentos);
+            catalogoDescuentosPorPlaza.putAll(tmpDescuentosPorPlaza);
         } else {
             cargarCatalogoBase();
         }
@@ -66,14 +163,103 @@ public class CatalogRepository {
                 Iterator<String> keys = obj.keys();
                 while (keys.hasNext()) {
                     String sku = keys.next();
-                    JSONObject item = obj.getJSONObject(sku);
-                    mapaSkus.put(sku, new ExcelCatalogParser.SkuInfo(
+                    JSONObject item = obj.optJSONObject(sku);
+                    if (item == null) continue;
+                    String prod = item.optString("producto", "");
+                    String pl = item.optString("plaza", "Única");
+                    if (!prod.isEmpty()) {
+                        mapaSkus.put(sku, new ExcelCatalogParser.SkuInfo(prod, pl));
+                    }
+                }
+            } catch (Exception e) {
+                logError("Error cargando SKUs en caché", e);
+            }
+        }
+        // Cargar productos agregados/editados manualmente (sobreviven a la sincronización XLSX)
+        String manualProdsJson = sp.getString(KEY_MANUAL_PRODUCTS, null);
+        if (manualProdsJson != null && !manualProdsJson.isEmpty()) {
+            try {
+                JSONObject obj = new JSONObject(manualProdsJson);
+                Iterator<String> keys = obj.keys();
+                while (keys.hasNext()) {
+                    String prod = keys.next();
+                    JSONObject prodObj = obj.optJSONObject(prod);
+                    if (prodObj == null) continue;
+                    ManualProductData data = new ManualProductData();
+                    data.descuento = prodObj.optDouble("descuento", 0.0);
+                    JSONObject plazasObj = prodObj.optJSONObject("plazas");
+                    if (plazasObj != null) {
+                        Iterator<String> pKeys = plazasObj.keys();
+                        while (pKeys.hasNext()) {
+                            String pl = pKeys.next();
+                            double pVal = plazasObj.optDouble(pl, -1.0);
+                            if (Double.isFinite(pVal) && pVal > 0.0) {
+                                data.plazas.put(pl, pVal);
+                            }
+                        }
+                    }
+                    JSONObject dctoPlazasObj = prodObj.optJSONObject("descuentos_plazas");
+                    if (dctoPlazasObj != null) {
+                        Iterator<String> dpKeys = dctoPlazasObj.keys();
+                        while (dpKeys.hasNext()) {
+                            String pl = dpKeys.next();
+                            double dp = dctoPlazasObj.optDouble(pl, data.descuento);
+                            if (Double.isFinite(dp)) {
+                                data.descuentosPorPlaza.put(pl, Math.max(0.0, Math.min(100.0, dp)));
+                            }
+                        }
+                    }
+                    if (!data.plazas.isEmpty()) {
+                        productosManuales.put(prod, data);
+                    }
+                }
+            } catch (Exception e) {
+                logError("Error cargando productos manuales", e);
+            }
+        }
+
+        // Cargar SKUs agregados/editados manualmente (sobreviven a la sincronización XLSX)
+        String manualSkusJson = sp.getString(KEY_MANUAL_SKUS, null);
+        if (manualSkusJson != null && !manualSkusJson.isEmpty()) {
+            try {
+                JSONObject obj = new JSONObject(manualSkusJson);
+                Iterator<String> keys = obj.keys();
+                while (keys.hasNext()) {
+                    String sku = keys.next();
+                    JSONObject item = obj.optJSONObject(sku);
+                    if (item == null) continue;
+                    skusManuales.put(sku, new ExcelCatalogParser.SkuInfo(
                             item.getString("producto"),
                             item.getString("plaza")
                     ));
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                logError("Error cargando SKUs manuales", e);
+            }
         }
+
+        reaplicarProductosManuales();
+        reaplicarSkusManuales();
+        reconstruirIndicesSku();
+
+        // Cargar descuentos editados manualmente (prevalecen sobre el XLSX)
+        String manualesJson = sp.getString(KEY_MANUAL_DISCOUNTS, null);
+        if (manualesJson != null && !manualesJson.isEmpty()) {
+            try {
+                JSONObject obj = new JSONObject(manualesJson);
+                Iterator<String> keys = obj.keys();
+                while (keys.hasNext()) {
+                    String clave = keys.next();
+                    double val = obj.optDouble(clave, Double.NaN);
+                    if (Double.isFinite(val)) {
+                        descuentosManuales.put(clave, Math.max(0.0, Math.min(100.0, val)));
+                    }
+                }
+            } catch (Exception e) {
+                logError("Error cargando descuentos manuales", e);
+            }
+        }
+        reaplicarDescuentosManuales();
     }
 
     private void cargarCatalogoBase() {
@@ -140,6 +326,7 @@ public class CatalogRepository {
     }
 
     public synchronized void guardarEnCache() {
+        if (context == null) return;
         // Snapshot en memoria (<1ms bajo synchronized)
         final HashMap<String, HashMap<String, Double>> snapshotPrecios = new HashMap<>();
         for (String prod : catalogoPrecios.keySet()) {
@@ -149,7 +336,27 @@ public class CatalogRepository {
             }
         }
         final HashMap<String, Double> snapshotDescuentos = new HashMap<>(catalogoDescuentos);
+        final HashMap<String, HashMap<String, Double>> snapshotDescuentosPorPlaza = new HashMap<>();
+        for (String prod : catalogoDescuentosPorPlaza.keySet()) {
+            HashMap<String, Double> mapDcto = catalogoDescuentosPorPlaza.get(prod);
+            if (mapDcto != null) {
+                snapshotDescuentosPorPlaza.put(prod, new HashMap<>(mapDcto));
+            }
+        }
         final HashMap<String, ExcelCatalogParser.SkuInfo> snapshotSkus = new HashMap<>(mapaSkus);
+        final HashMap<String, Double> snapshotManuales = new HashMap<>(descuentosManuales);
+        final HashMap<String, ManualProductData> snapshotManualProducts = new HashMap<>();
+        for (String prod : productosManuales.keySet()) {
+            ManualProductData src = productosManuales.get(prod);
+            if (src != null) {
+                ManualProductData copy = new ManualProductData();
+                copy.descuento = src.descuento;
+                copy.plazas.putAll(src.plazas);
+                copy.descuentosPorPlaza.putAll(src.descuentosPorPlaza);
+                snapshotManualProducts.put(prod, copy);
+            }
+        }
+        final HashMap<String, ExcelCatalogParser.SkuInfo> snapshotManualSkus = new HashMap<>(skusManuales);
 
         // Serialización JSON y guardado en disco en hilo de fondo para evitar ANR
         ioExecutor.execute(() -> {
@@ -168,6 +375,15 @@ public class CatalogRepository {
                         }
                     }
                     obj.put("plazas", plazasObj);
+
+                    HashMap<String, Double> mapDcto = snapshotDescuentosPorPlaza.get(prod);
+                    if (mapDcto != null && !mapDcto.isEmpty()) {
+                        JSONObject dctoPlazasObj = new JSONObject();
+                        for (String pl : mapDcto.keySet()) {
+                            dctoPlazasObj.put(pl, mapDcto.get(pl));
+                        }
+                        obj.put("descuentos_plazas", dctoPlazasObj);
+                    }
                     arr.put(obj);
                 }
 
@@ -183,12 +399,59 @@ public class CatalogRepository {
                     }
                 }
 
+                JSONObject manualesObj = new JSONObject();
+                for (String clave : snapshotManuales.keySet()) {
+                    Double val = snapshotManuales.get(clave);
+                    if (val != null) {
+                        manualesObj.put(clave, val);
+                    }
+                }
+
+                JSONObject manualProdsObj = new JSONObject();
+                for (String prod : snapshotManualProducts.keySet()) {
+                    ManualProductData data = snapshotManualProducts.get(prod);
+                    if (data == null) continue;
+                    JSONObject prodObj = new JSONObject();
+                    prodObj.put("descuento", data.descuento);
+                    JSONObject pObj = new JSONObject();
+                    for (String pl : data.plazas.keySet()) {
+                        pObj.put(pl, data.plazas.get(pl));
+                    }
+                    prodObj.put("plazas", pObj);
+                    JSONObject dpObj = new JSONObject();
+                    for (String pl : data.descuentosPorPlaza.keySet()) {
+                        dpObj.put(pl, data.descuentosPorPlaza.get(pl));
+                    }
+                    prodObj.put("descuentos_plazas", dpObj);
+                    manualProdsObj.put(prod, prodObj);
+                }
+
+                JSONObject manualSkusObj = new JSONObject();
+                for (String sku : snapshotManualSkus.keySet()) {
+                    ExcelCatalogParser.SkuInfo info = snapshotManualSkus.get(sku);
+                    if (info != null) {
+                        JSONObject item = new JSONObject();
+                        item.put("producto", info.producto);
+                        item.put("plaza", info.plaza);
+                        manualSkusObj.put(sku, item);
+                    }
+                }
+
                 SharedPreferences sp = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-                sp.edit()
-                        .putString(KEY_CUSTOM_CATALOG, arr.toString())
+                SharedPreferences.Editor editor = sp.edit()
                         .putString(KEY_CUSTOM_SKUS, skusObj.toString())
-                        .apply();
-            } catch (Exception ignored) {}
+                        .putString(KEY_MANUAL_DISCOUNTS, manualesObj.toString())
+                        .putString(KEY_MANUAL_PRODUCTS, manualProdsObj.toString())
+                        .putString(KEY_MANUAL_SKUS, manualSkusObj.toString());
+                if (arr.length() > 0) {
+                    String catalogJson = arr.toString();
+                    editor.putString(KEY_CUSTOM_CATALOG, catalogJson)
+                            .putString(KEY_CUSTOM_CATALOG_BACKUP, catalogJson);
+                }
+                editor.apply();
+            } catch (Exception e) {
+                logError("Error guardando caché del catálogo", e);
+            }
         });
     }
 
@@ -200,7 +463,9 @@ public class CatalogRepository {
         for (String nombre : nombres) {
             double desc = catalogoDescuentos.getOrDefault(nombre, 0.0);
             HashMap<String, Double> plazas = catalogoPrecios.get(nombre);
-            lista.add(new ProductoItem(nombre, desc, plazas));
+            ProductoItem item = new ProductoItem(nombre, desc, plazas);
+            item.setSkusBusqueda(mapaProductoASkus.getOrDefault(nombre, ""));
+            lista.add(item);
         }
         return lista;
     }
@@ -209,13 +474,20 @@ public class CatalogRepository {
         List<String> filtrados = new ArrayList<>();
         List<String> todos = new ArrayList<>(catalogoPrecios.keySet());
         Collections.sort(todos);
+        String catSinAcentos = quitarAcentos(categoria).toUpperCase(Locale.ROOT);
 
         for (String p : todos) {
-            if ("Todos".equalsIgnoreCase(categoria) || p.toUpperCase().contains(categoria.toUpperCase())) {
+            if ("TODOS".equals(catSinAcentos) || quitarAcentos(p).toUpperCase(Locale.ROOT).contains(catSinAcentos)) {
                 filtrados.add(p);
             }
         }
         return filtrados;
+    }
+
+    private static String quitarAcentos(String s) {
+        if (s == null) return "";
+        String norm = java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFD);
+        return norm.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
     }
 
     public synchronized boolean existeProducto(String nombre) {
@@ -231,30 +503,184 @@ public class CatalogRepository {
         return catalogoDescuentos.getOrDefault(nombre, 0.0);
     }
 
+    public synchronized double obtenerDescuento(String nombre, String plaza) {
+        if (nombre == null || nombre.isEmpty()) return 0.0;
+        if (plaza != null && !plaza.isEmpty()) {
+            Double manual = descuentosManuales.get(claveProductoPlaza(nombre, plaza));
+            if (manual != null) return manual;
+
+            HashMap<String, Double> mapDcto = catalogoDescuentosPorPlaza.get(nombre);
+            if (mapDcto != null && mapDcto.containsKey(plaza)) {
+                return mapDcto.get(plaza);
+            }
+        }
+        return obtenerDescuento(nombre);
+    }
+
+    public synchronized boolean tieneDescuentoManual(String nombre, String plaza) {
+        if (nombre == null || plaza == null) return false;
+        return descuentosManuales.containsKey(claveProductoPlaza(nombre, plaza));
+    }
+
+    public synchronized void guardarDescuentoManual(String producto, String plaza, double descuento) {
+        if (producto == null || producto.trim().isEmpty()) return;
+        String plazaFinal = (plaza == null || plaza.trim().isEmpty()) ? "Única" : plaza.trim();
+        double dctoNorm = Math.max(0.0, Math.min(100.0, descuento));
+
+        descuentosManuales.put(claveProductoPlaza(producto, plazaFinal), dctoNorm);
+        if (!catalogoDescuentosPorPlaza.containsKey(producto)) {
+            catalogoDescuentosPorPlaza.put(producto, new HashMap<>());
+        }
+        catalogoDescuentosPorPlaza.get(producto).put(plazaFinal, dctoNorm);
+        catalogoDescuentos.put(producto, dctoNorm);
+        guardarEnCache();
+    }
+
     public synchronized void guardarOEditarProducto(String nombreViejo, String nombreNuevo, String plaza, double precio, double descuento) {
-        boolean esCambioNombre = nombreViejo != null && !nombreViejo.trim().isEmpty() && !nombreViejo.equals(nombreNuevo);
+        if (nombreNuevo == null || nombreNuevo.trim().isEmpty()) return;
+        String nombreLimpio = nombreNuevo.trim();
+        String plazaFinal = (plaza != null && !plaza.trim().isEmpty()) ? plaza.trim() : "Única";
+        double dctoNorm = Math.max(0.0, Math.min(100.0, descuento));
+        boolean esCambioNombre = nombreViejo != null && !nombreViejo.trim().isEmpty() && !nombreViejo.equals(nombreLimpio);
 
         if (esCambioNombre) {
             HashMap<String, Double> mapViejo = catalogoPrecios.remove(nombreViejo);
             catalogoDescuentos.remove(nombreViejo);
+            HashMap<String, Double> mapDctoViejo = catalogoDescuentosPorPlaza.remove(nombreViejo);
+            productosManuales.remove(nombreViejo);
+            renombrarClavesSecundarias(nombreViejo, nombreLimpio);
             if (mapViejo == null) mapViejo = new HashMap<>();
-            mapViejo.put(plaza, precio);
-            catalogoPrecios.put(nombreNuevo, mapViejo);
-            catalogoDescuentos.put(nombreNuevo, descuento);
+            mapViejo.put(plazaFinal, precio);
+            catalogoPrecios.put(nombreLimpio, mapViejo);
+            catalogoDescuentos.put(nombreLimpio, dctoNorm);
+            if (mapDctoViejo == null) mapDctoViejo = new HashMap<>();
+            mapDctoViejo.put(plazaFinal, dctoNorm);
+            catalogoDescuentosPorPlaza.put(nombreLimpio, mapDctoViejo);
         } else {
-            if (!catalogoPrecios.containsKey(nombreNuevo)) {
-                catalogoPrecios.put(nombreNuevo, new HashMap<>());
+            if (!catalogoPrecios.containsKey(nombreLimpio)) {
+                catalogoPrecios.put(nombreLimpio, new HashMap<>());
             }
-            catalogoPrecios.get(nombreNuevo).put(plaza, precio);
-            catalogoDescuentos.put(nombreNuevo, descuento);
+            catalogoPrecios.get(nombreLimpio).put(plazaFinal, precio);
+            catalogoDescuentos.put(nombreLimpio, dctoNorm);
+            if (!catalogoDescuentosPorPlaza.containsKey(nombreLimpio)) {
+                catalogoDescuentosPorPlaza.put(nombreLimpio, new HashMap<>());
+            }
+            catalogoDescuentosPorPlaza.get(nombreLimpio).put(plazaFinal, dctoNorm);
         }
 
+        ManualProductData manual = productosManuales.get(nombreLimpio);
+        if (manual == null) {
+            manual = new ManualProductData();
+            productosManuales.put(nombreLimpio, manual);
+        }
+        manual.descuento = dctoNorm;
+        manual.plazas.put(plazaFinal, precio);
+        manual.descuentosPorPlaza.put(plazaFinal, dctoNorm);
+
+        descuentosManuales.put(claveProductoPlaza(nombreLimpio, plazaFinal), dctoNorm);
+        reconstruirIndicesSku();
+        guardarEnCache();
+    }
+
+    public synchronized void guardarProductoCompleto(
+            String nombreViejo,
+            String nombreNuevo,
+            double descuentoGeneral,
+            List<PlazaEntrada> entradas) {
+        if (nombreNuevo == null || nombreNuevo.trim().isEmpty() || entradas == null || entradas.isEmpty()) {
+            return;
+        }
+        String nombreLimpio = nombreNuevo.trim();
+        double dctoNorm = Math.max(0.0, Math.min(100.0, descuentoGeneral));
+        boolean esCambioNombre = nombreViejo != null && !nombreViejo.trim().isEmpty() && !nombreViejo.equals(nombreLimpio);
+
+        if (esCambioNombre) {
+            catalogoPrecios.remove(nombreViejo);
+            catalogoDescuentos.remove(nombreViejo);
+            catalogoDescuentosPorPlaza.remove(nombreViejo);
+            productosManuales.remove(nombreViejo);
+            limpiarDescuentosManualesDeProducto(nombreViejo);
+        }
+
+        HashMap<String, Double> nuevosPreciosProd = new HashMap<>();
+        HashMap<String, Double> nuevosDctosProd = new HashMap<>();
+        ManualProductData manual = new ManualProductData();
+        manual.descuento = dctoNorm;
+
+        Set<String> plazasNuevas = new HashSet<>();
+        for (PlazaEntrada entrada : entradas) {
+            if (entrada == null) continue;
+            String pl = entrada.plaza;
+            double dctoPlaza = (entrada.descuento != null && Double.isFinite(entrada.descuento))
+                    ? Math.max(0.0, Math.min(100.0, entrada.descuento))
+                    : dctoNorm;
+            plazasNuevas.add(pl);
+            nuevosPreciosProd.put(pl, entrada.precio);
+            nuevosDctosProd.put(pl, dctoPlaza);
+            manual.plazas.put(pl, entrada.precio);
+            manual.descuentosPorPlaza.put(pl, dctoPlaza);
+            descuentosManuales.put(claveProductoPlaza(nombreLimpio, pl), dctoPlaza);
+        }
+
+        catalogoPrecios.put(nombreLimpio, nuevosPreciosProd);
+        catalogoDescuentos.put(nombreLimpio, dctoNorm);
+        catalogoDescuentosPorPlaza.put(nombreLimpio, nuevosDctosProd);
+        recalcularDescuentoGeneralProducto(nombreLimpio);
+        manual.descuento = catalogoDescuentos.getOrDefault(nombreLimpio, dctoNorm);
+        productosManuales.put(nombreLimpio, manual);
+
+        // Actualizar SKUs asociados a nombreViejo / nombreLimpio
+        eliminarSkusObsoletosDeProducto(nombreViejo, nombreLimpio, plazasNuevas, entradas);
+        for (PlazaEntrada entrada : entradas) {
+            if (entrada != null && !entrada.sku.isEmpty()) {
+                ExcelCatalogParser.SkuInfo info = new ExcelCatalogParser.SkuInfo(nombreLimpio, entrada.plaza);
+                mapaSkus.put(entrada.sku, info);
+                skusManuales.put(entrada.sku, info);
+            }
+        }
+
+        reconstruirIndicesSku();
         guardarEnCache();
     }
 
     public synchronized void eliminarProducto(String nombre) {
+        if (nombre == null) return;
         catalogoPrecios.remove(nombre);
         catalogoDescuentos.remove(nombre);
+        catalogoDescuentosPorPlaza.remove(nombre);
+        productosManuales.remove(nombre);
+        limpiarDescuentosManualesDeProducto(nombre);
+        eliminarTodosSkusDeProducto(nombre);
+        reconstruirIndicesSku();
+        guardarEnCache();
+    }
+
+    public synchronized void actualizarCatalogoCompleto(
+            HashMap<String, HashMap<String, Double>> nuevosPrecios,
+            HashMap<String, Double> nuevosDescuentos,
+            HashMap<String, HashMap<String, Double>> nuevosDescuentosPorPlaza,
+            HashMap<String, ExcelCatalogParser.SkuInfo> nuevosSkus) {
+        catalogoPrecios.clear();
+        catalogoPrecios.putAll(nuevosPrecios);
+        catalogoDescuentos.clear();
+        catalogoDescuentos.putAll(nuevosDescuentos);
+        catalogoDescuentosPorPlaza.clear();
+        if (nuevosDescuentosPorPlaza != null) {
+            for (String prod : nuevosDescuentosPorPlaza.keySet()) {
+                HashMap<String, Double> map = nuevosDescuentosPorPlaza.get(prod);
+                if (map != null) {
+                    catalogoDescuentosPorPlaza.put(prod, new HashMap<>(map));
+                }
+            }
+        }
+        if (nuevosSkus != null) {
+            mapaSkus.clear();
+            mapaSkus.putAll(nuevosSkus);
+        }
+        reaplicarProductosManuales();
+        reaplicarSkusManuales();
+        reconstruirIndicesSku();
+        reaplicarDescuentosManuales();
         guardarEnCache();
     }
 
@@ -262,27 +688,243 @@ public class CatalogRepository {
             HashMap<String, HashMap<String, Double>> nuevosPrecios,
             HashMap<String, Double> nuevosDescuentos,
             HashMap<String, ExcelCatalogParser.SkuInfo> nuevosSkus) {
-        catalogoPrecios.clear();
-        catalogoPrecios.putAll(nuevosPrecios);
-        catalogoDescuentos.clear();
-        catalogoDescuentos.putAll(nuevosDescuentos);
-        if (nuevosSkus != null) {
-            mapaSkus.clear();
-            mapaSkus.putAll(nuevosSkus);
-        }
-        guardarEnCache();
+        actualizarCatalogoCompleto(nuevosPrecios, nuevosDescuentos, null, nuevosSkus);
     }
 
     public synchronized void actualizarCatalogoCompleto(
             HashMap<String, HashMap<String, Double>> nuevosPrecios,
             HashMap<String, Double> nuevosDescuentos) {
-        actualizarCatalogoCompleto(nuevosPrecios, nuevosDescuentos, null);
+        actualizarCatalogoCompleto(nuevosPrecios, nuevosDescuentos, null, null);
     }
 
     public synchronized ExcelCatalogParser.SkuInfo buscarPorSku(String sku) {
         if (sku == null || sku.trim().isEmpty()) return null;
-        String limpio = sku.trim().toUpperCase();
+        String limpio = sku.trim().toUpperCase(Locale.ROOT);
         return mapaSkus.get(limpio);
+    }
+
+    public synchronized String obtenerSku(String nombre, String plaza) {
+        return obtenerSkuExacto(nombre, plaza);
+    }
+
+    public synchronized String obtenerSkuExacto(String nombre, String plaza) {
+        if (nombre == null || nombre.trim().isEmpty() || plaza == null || plaza.trim().isEmpty()) {
+            return "";
+        }
+        String exacto = mapaProductoPlazaASku.get(claveProductoPlaza(nombre, plaza));
+        return exacto != null ? exacto : "";
+    }
+
+    public synchronized void registrarSkuManual(String sku, String nombre, String plaza) {
+        if (sku == null || sku.trim().isEmpty() || nombre == null || nombre.trim().isEmpty()) return;
+        String skuLimpio = sku.trim().toUpperCase(Locale.ROOT);
+        String plazaLimpia = (plaza == null || plaza.trim().isEmpty()) ? "Única" : plaza.trim();
+        ExcelCatalogParser.SkuInfo info = new ExcelCatalogParser.SkuInfo(nombre.trim(), plazaLimpia);
+        mapaSkus.put(skuLimpio, info);
+        skusManuales.put(skuLimpio, info);
+        reconstruirIndicesSku();
+        guardarEnCache();
+    }
+
+    private void renombrarClavesSecundarias(String nombreViejo, String nombreNuevo) {
+        HashMap<String, Double> nuevasManuales = new HashMap<>();
+        Iterator<String> it = descuentosManuales.keySet().iterator();
+        String prefijo = nombreViejo + "||";
+        while (it.hasNext()) {
+            String clave = it.next();
+            if (clave.startsWith(prefijo)) {
+                Double val = descuentosManuales.get(clave);
+                String pl = clave.substring(prefijo.length());
+                if (val != null) {
+                    nuevasManuales.put(claveProductoPlaza(nombreNuevo, pl), val);
+                }
+                it.remove();
+            }
+        }
+        descuentosManuales.putAll(nuevasManuales);
+
+        for (String sku : new ArrayList<>(mapaSkus.keySet())) {
+            ExcelCatalogParser.SkuInfo info = mapaSkus.get(sku);
+            if (info != null && info.producto.equals(nombreViejo)) {
+                mapaSkus.put(sku, new ExcelCatalogParser.SkuInfo(nombreNuevo, info.plaza));
+            }
+        }
+        for (String sku : new ArrayList<>(skusManuales.keySet())) {
+            ExcelCatalogParser.SkuInfo info = skusManuales.get(sku);
+            if (info != null && info.producto.equals(nombreViejo)) {
+                skusManuales.put(sku, new ExcelCatalogParser.SkuInfo(nombreNuevo, info.plaza));
+            }
+        }
+    }
+
+    private void limpiarDescuentosManualesDeProducto(String producto) {
+        if (producto == null) return;
+        String prefijo = producto + "||";
+        Iterator<String> it = descuentosManuales.keySet().iterator();
+        while (it.hasNext()) {
+            if (it.next().startsWith(prefijo)) {
+                it.remove();
+            }
+        }
+    }
+
+    private void eliminarTodosSkusDeProducto(String producto) {
+        if (producto == null) return;
+        eliminarDeMapaPorProducto(mapaSkus, producto);
+        eliminarDeMapaPorProducto(skusManuales, producto);
+    }
+
+    private static void eliminarDeMapaPorProducto(HashMap<String, ExcelCatalogParser.SkuInfo> mapa, String producto) {
+        Iterator<String> it = mapa.keySet().iterator();
+        while (it.hasNext()) {
+            ExcelCatalogParser.SkuInfo info = mapa.get(it.next());
+            if (info != null && info.producto.equals(producto)) {
+                it.remove();
+            }
+        }
+    }
+
+    private void eliminarSkusObsoletosDeProducto(
+            String nombreViejo,
+            String nombreNuevo,
+            Set<String> plazasNuevas,
+            List<PlazaEntrada> entradas) {
+        HashMap<String, String> skuPorPlazaNueva = new HashMap<>();
+        for (PlazaEntrada entrada : entradas) {
+            if (entrada != null) {
+                skuPorPlazaNueva.put(entrada.plaza, entrada.sku);
+            }
+        }
+        limpiarSkusObsoletosEnMapa(mapaSkus, nombreViejo, nombreNuevo, plazasNuevas, skuPorPlazaNueva);
+        limpiarSkusObsoletosEnMapa(skusManuales, nombreViejo, nombreNuevo, plazasNuevas, skuPorPlazaNueva);
+    }
+
+    private static void limpiarSkusObsoletosEnMapa(
+            HashMap<String, ExcelCatalogParser.SkuInfo> mapa,
+            String nombreViejo,
+            String nombreNuevo,
+            Set<String> plazasNuevas,
+            HashMap<String, String> skuPorPlazaNueva) {
+        Iterator<String> it = mapa.keySet().iterator();
+        while (it.hasNext()) {
+            String sku = it.next();
+            ExcelCatalogParser.SkuInfo info = mapa.get(sku);
+            if (info == null) continue;
+            boolean esProducto = info.producto.equals(nombreNuevo)
+                    || (nombreViejo != null && info.producto.equals(nombreViejo));
+            if (!esProducto) continue;
+            if (!plazasNuevas.contains(info.plaza)) {
+                it.remove();
+                continue;
+            }
+            String skuObjetivo = skuPorPlazaNueva.get(info.plaza);
+            if (skuObjetivo == null || !skuObjetivo.equalsIgnoreCase(sku)) {
+                it.remove();
+            }
+        }
+    }
+
+    private void reaplicarProductosManuales() {
+        for (String prod : productosManuales.keySet()) {
+            ManualProductData manual = productosManuales.get(prod);
+            if (manual == null || manual.plazas.isEmpty()) continue;
+
+            HashMap<String, Double> targetPlazas = catalogoPrecios.get(prod);
+            if (targetPlazas == null) {
+                targetPlazas = new HashMap<>();
+                catalogoPrecios.put(prod, targetPlazas);
+            }
+            targetPlazas.putAll(manual.plazas);
+            catalogoDescuentos.put(prod, manual.descuento);
+
+            HashMap<String, Double> targetDctos = catalogoDescuentosPorPlaza.get(prod);
+            if (targetDctos == null) {
+                targetDctos = new HashMap<>();
+                catalogoDescuentosPorPlaza.put(prod, targetDctos);
+            }
+            targetDctos.putAll(manual.descuentosPorPlaza);
+        }
+    }
+
+    private void reaplicarSkusManuales() {
+        for (String sku : skusManuales.keySet()) {
+            ExcelCatalogParser.SkuInfo info = skusManuales.get(sku);
+            if (info != null) {
+                mapaSkus.put(sku, info);
+            }
+        }
+    }
+
+    private void reconstruirIndicesSku() {
+        mapaProductoPlazaASku.clear();
+        mapaProductoASkus.clear();
+        HashMap<String, StringBuilder> builders = new HashMap<>();
+        for (String sku : mapaSkus.keySet()) {
+            ExcelCatalogParser.SkuInfo info = mapaSkus.get(sku);
+            if (info == null) continue;
+            mapaProductoPlazaASku.put(claveProductoPlaza(info.producto, info.plaza), sku);
+            StringBuilder sb = builders.get(info.producto);
+            if (sb == null) {
+                sb = new StringBuilder();
+                builders.put(info.producto, sb);
+            } else {
+                sb.append(" ");
+            }
+            sb.append(sku);
+        }
+        for (String prod : builders.keySet()) {
+            mapaProductoASkus.put(prod, builders.get(prod).toString());
+        }
+    }
+
+    private void reaplicarDescuentosManuales() {
+        Set<String> prodsAfectados = new HashSet<>();
+        for (String clave : descuentosManuales.keySet()) {
+            Double dcto = descuentosManuales.get(clave);
+            if (dcto == null) continue;
+            int sep = clave.indexOf("||");
+            if (sep <= 0) continue;
+            String prod = clave.substring(0, sep);
+            String plaza = clave.substring(sep + 2);
+            if (!catalogoPrecios.containsKey(prod)) continue;
+
+            if (!catalogoDescuentosPorPlaza.containsKey(prod)) {
+                catalogoDescuentosPorPlaza.put(prod, new HashMap<>());
+            }
+            catalogoDescuentosPorPlaza.get(prod).put(plaza, dcto);
+            prodsAfectados.add(prod);
+        }
+        for (String prod : prodsAfectados) {
+            recalcularDescuentoGeneralProducto(prod);
+        }
+    }
+
+    private void recalcularDescuentoGeneralProducto(String prod) {
+        HashMap<String, Double> map = catalogoDescuentosPorPlaza.get(prod);
+        if (map == null || map.isEmpty()) return;
+        String[] prioridad = {"1.5", "2.0", "Única", "1.0", "2.5", "3.0"};
+        for (String pl : prioridad) {
+            Double v = map.get(pl);
+            if (v != null && Double.isFinite(v)) {
+                catalogoDescuentos.put(prod, v);
+                return;
+            }
+        }
+        List<String> keys = new ArrayList<>(map.keySet());
+        Collections.sort(keys);
+        for (String k : keys) {
+            Double v = map.get(k);
+            if (v != null && Double.isFinite(v)) {
+                catalogoDescuentos.put(prod, v);
+                return;
+            }
+        }
+    }
+
+    private static String claveProductoPlaza(String producto, String plaza) {
+        String p = producto != null ? producto.trim() : "";
+        String pl = plaza != null ? plaza.trim() : "";
+        return p + "||" + pl;
     }
 
     public synchronized int totalSkus() {

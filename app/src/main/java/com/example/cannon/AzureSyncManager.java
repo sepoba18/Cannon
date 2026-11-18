@@ -30,7 +30,12 @@ public class AzureSyncManager {
 
     public interface SyncCallback {
         void onIniciando();
-        void onSuccess(HashMap<String, HashMap<String, Double>> precios, HashMap<String, Double> descuentos, HashMap<String, ExcelCatalogParser.SkuInfo> skuMap, String horaSync);
+        void onSuccess(
+                HashMap<String, HashMap<String, Double>> precios,
+                HashMap<String, Double> descuentos,
+                HashMap<String, HashMap<String, Double>> descuentosPorPlaza,
+                HashMap<String, ExcelCatalogParser.SkuInfo> skuMap,
+                String horaSync);
         void onError(String mensajeError, boolean esErrorConexion);
     }
 
@@ -38,7 +43,8 @@ public class AzureSyncManager {
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
-    public static final String DEFAULT_AZURE_URL = "https://sebacannon2.blob.core.windows.net/catalogo/Precios_Cyber_Day.xlsx";
+    private static final int MAX_JSON_CHARS = 15 * 1024 * 1024;
+    public static final String DEFAULT_AZURE_URL = BuildConfig.DEFAULT_AZURE_URL != null ? BuildConfig.DEFAULT_AZURE_URL : "";
 
     public AzureSyncManager(Context context) {
         this.context = context.getApplicationContext();
@@ -47,11 +53,12 @@ public class AzureSyncManager {
     public String getUrlConfigurada() {
         SharedPreferences sp = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         String url = sp.getString(KEY_AZURE_URL, "");
-        if (url.isEmpty() || 
-            url.toLowerCase(Locale.ROOT).contains(".json") || 
-            url.toLowerCase(Locale.ROOT).contains("plantilla_catalogo_cannon")) {
-            guardarUrl(DEFAULT_AZURE_URL);
-            return DEFAULT_AZURE_URL;
+        if (url.isEmpty() || url.toLowerCase(Locale.ROOT).contains("plantilla_catalogo_cannon")) {
+            if (!DEFAULT_AZURE_URL.isEmpty()) {
+                guardarUrl(DEFAULT_AZURE_URL);
+                return DEFAULT_AZURE_URL;
+            }
+            return "";
         }
         return url;
     }
@@ -100,7 +107,7 @@ public class AzureSyncManager {
 
                 while (redirects < 6) {
                     conn = (HttpURLConnection) url.openConnection();
-                    conn.setInstanceFollowRedirects(true);
+                    conn.setInstanceFollowRedirects(false);
                     conn.setRequestMethod("GET");
                     conn.setConnectTimeout(10000);
                     conn.setReadTimeout(10000);
@@ -113,10 +120,11 @@ public class AzureSyncManager {
                         String location = conn.getHeaderField("Location");
                         conn.disconnect();
                         if (location != null && !location.isEmpty()) {
-                            if (!location.toLowerCase(Locale.ROOT).startsWith("https://")) {
+                            URL nextUrl = new URL(url, location);
+                            if (!"https".equalsIgnoreCase(nextUrl.getProtocol())) {
                                 throw new SecurityException("Bloqueada redirección insegura a protocolo HTTP no cifrado.");
                             }
-                            url = new URL(location);
+                            url = nextUrl;
                             redirects++;
                             continue;
                         }
@@ -134,36 +142,50 @@ public class AzureSyncManager {
                 if (responseCode == 200) {
                     HashMap<String, HashMap<String, Double>> nuevosPrecios = new HashMap<>();
                     HashMap<String, Double> nuevosDescuentos = new HashMap<>();
+                    HashMap<String, HashMap<String, Double>> nuevosDescuentosPorPlaza = new HashMap<>();
                     HashMap<String, ExcelCatalogParser.SkuInfo> nuevosSkus = new HashMap<>();
 
                     if (esExcel) {
                         ExcelCatalogParser.ResultadoExcel resExcel = ExcelCatalogParser.parsear(context, conn.getInputStream());
                         nuevosPrecios.putAll(resExcel.precios);
                         nuevosDescuentos.putAll(resExcel.descuentos);
+                        nuevosDescuentosPorPlaza.putAll(resExcel.descuentosPorPlaza);
                         nuevosSkus.putAll(resExcel.skuMap);
                     } else {
                         reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8));
                         StringBuilder response = new StringBuilder();
-                        String line;
-                        while ((line = reader.readLine()) != null) {
-                            response.append(line);
+                        char[] buf = new char[8192];
+                        int n;
+                        while ((n = reader.read(buf)) != -1) {
+                            if (response.length() + n > MAX_JSON_CHARS) {
+                                throw new IllegalStateException("La respuesta JSON excede el tamaño máximo permitido");
+                            }
+                            response.append(buf, 0, n);
                         }
 
                         JSONArray arr = new JSONArray(response.toString());
                         for (int i = 0; i < arr.length(); i++) {
                             JSONObject obj = arr.getJSONObject(i);
-                            String nombre = obj.getString("nombre");
-                            double dcto = obj.optDouble("descuento", 0.0);
-                            JSONObject plazasObj = obj.getJSONObject("plazas");
+                            String nombre = obj.optString("nombre", "").trim();
+                            if (nombre.isEmpty()) continue;
+                            double rawDcto = obj.optDouble("descuento", 0.0);
+                            double dcto = Double.isFinite(rawDcto) ? Math.max(0.0, Math.min(100.0, rawDcto)) : 0.0;
+                            JSONObject plazasObj = obj.optJSONObject("plazas");
+                            if (plazasObj == null) continue;
 
                             HashMap<String, Double> mapPlazas = new HashMap<>();
                             Iterator<String> keys = plazasObj.keys();
                             while (keys.hasNext()) {
                                 String k = keys.next();
-                                mapPlazas.put(k, plazasObj.getDouble(k));
+                                double p = plazasObj.optDouble(k, -1.0);
+                                if (Double.isFinite(p) && p > 0.0) {
+                                    mapPlazas.put(k, p);
+                                }
                             }
-                            nuevosPrecios.put(nombre, mapPlazas);
-                            nuevosDescuentos.put(nombre, dcto);
+                            if (!mapPlazas.isEmpty()) {
+                                nuevosPrecios.put(nombre, mapPlazas);
+                                nuevosDescuentos.put(nombre, dcto);
+                            }
                         }
                     }
 
@@ -175,7 +197,7 @@ public class AzureSyncManager {
 
                     mainHandler.post(() -> {
                         if (callback != null) {
-                            callback.onSuccess(nuevosPrecios, nuevosDescuentos, nuevosSkus, horaSync);
+                            callback.onSuccess(nuevosPrecios, nuevosDescuentos, nuevosDescuentosPorPlaza, nuevosSkus, horaSync);
                         }
                     });
                 } else {

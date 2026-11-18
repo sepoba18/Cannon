@@ -28,11 +28,12 @@ public class CotizadorEngine {
     }
 
     public static Resultado calcular(double precioBase, double descuento) {
-        if (precioBase <= 0) {
+        if (!Double.isFinite(precioBase) || precioBase <= 0) {
             return new Resultado(0, 0, 0, 0);
         }
 
-        double descNormalizado = Math.max(0.0, Math.min(100.0, descuento));
+        double dctoSeguro = Double.isFinite(descuento) ? descuento : 0.0;
+        double descNormalizado = Math.max(0.0, Math.min(100.0, dctoSeguro));
         double factor = 1.0 - (descNormalizado / 100.0);
         double pFinal = Math.round(precioBase * factor);
         double ahorro = precioBase - pFinal;
@@ -41,6 +42,7 @@ public class CotizadorEngine {
     }
 
     public static String formatearMoneda(double monto) {
-        return String.format(Locale.getDefault(), "$%,.0f", monto);
+        double montoSeguro = Double.isFinite(monto) ? monto : 0.0;
+        return String.format(Locale.getDefault(), "$%,.0f", montoSeguro);
     }
 }

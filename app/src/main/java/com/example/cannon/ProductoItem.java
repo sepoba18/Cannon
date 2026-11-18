@@ -7,11 +7,20 @@ public class ProductoItem {
     private String nombre;
     private double descuento;
     private HashMap<String, Double> plazas;
+    private String skusBusqueda = "";
 
     public ProductoItem(String nombre, double descuento, HashMap<String, Double> plazas) {
         this.nombre = nombre;
         this.descuento = descuento;
         this.plazas = plazas != null ? plazas : new HashMap<>();
+    }
+
+    public String getSkusBusqueda() {
+        return skusBusqueda;
+    }
+
+    public void setSkusBusqueda(String skusBusqueda) {
+        this.skusBusqueda = skusBusqueda != null ? skusBusqueda : "";
     }
 
     public String getNombre() {
@@ -42,6 +51,7 @@ public class ProductoItem {
         int count = 0;
         for (String plaza : plazas.keySet()) {
             Double precio = plazas.get(plaza);
+            if (precio == null || !Double.isFinite(precio)) continue;
             if (count > 0) sb.append("  •  ");
             sb.append(plaza).append(": $").append(String.format(Locale.getDefault(), "%,.0f", precio));
             count++;

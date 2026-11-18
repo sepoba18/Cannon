@@ -39,9 +39,11 @@ public class CatalogAdapter extends RecyclerView.Adapter<CatalogAdapter.ViewHold
         if (query == null || query.trim().isEmpty()) {
             listaFiltrada.addAll(listaOriginal);
         } else {
-            String lower = query.toLowerCase(Locale.getDefault());
+            String lower = query.trim().toLowerCase(Locale.getDefault());
             for (ProductoItem item : listaOriginal) {
-                if (item.getNombre().toLowerCase(Locale.getDefault()).contains(lower)) {
+                boolean coincideNombre = item.getNombre().toLowerCase(Locale.getDefault()).contains(lower);
+                boolean coincideSku = item.getSkusBusqueda().toLowerCase(Locale.getDefault()).contains(lower);
+                if (coincideNombre || coincideSku) {
                     listaFiltrada.add(item);
                 }
             }
