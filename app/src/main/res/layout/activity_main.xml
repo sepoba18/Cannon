@@ -12,16 +12,16 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <!-- Header Moderno Institucional Cannon Home con Acento Rojo y Botón de Nube -->
+        <!-- Header Institucional Cannon Home (sin línea roja superior, bordes inferiores redondeados) -->
         <LinearLayout
             android:id="@+id/layoutHeader"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/bg_header_cannon"
-            android:orientation="horizontal"
             android:gravity="center_vertical"
+            android:orientation="horizontal"
             android:paddingHorizontal="20dp"
-            android:paddingTop="26dp"
+            android:paddingTop="24dp"
             android:paddingBottom="18dp">
 
             <LinearLayout
@@ -30,23 +30,36 @@
                 android:layout_weight="1"
                 android:orientation="vertical">
 
-                <TextView
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:letterSpacing="0.08"
-                    android:text="CANNON HOME"
-                    android:textColor="@color/white"
-                    android:textSize="22sp"
-                    android:textStyle="bold" />
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:letterSpacing="0.08"
+                        android:text="CANNON HOME"
+                        android:textColor="@color/white"
+                        android:textSize="21sp"
+                        android:textStyle="bold" />
+
+                    <View
+                        android:layout_width="6dp"
+                        android:layout_height="6dp"
+                        android:layout_marginStart="6dp"
+                        android:background="@drawable/bg_brand_accent_dot" />
+                </LinearLayout>
 
                 <TextView
                     android:id="@+id/tvHeaderSubtitulo"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
-                    android:text="Cotizador y Calculadora de Descuentos"
-                    android:textColor="@color/cannon_navy_surface"
-                    android:textSize="13sp" />
+                    android:text="Cotizador Comercial"
+                    android:textColor="@color/cannon_navy_text_muted"
+                    android:textSize="12.5sp" />
 
                 <TextView
                     android:id="@+id/tvEstadoNube"
@@ -54,8 +67,8 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
                     android:background="@drawable/bg_status_cloud"
-                    android:text="☁️ Nube Azure conectada"
-                    android:textColor="@color/cloud_sync_badge"
+                    android:text="● Azure conectada"
+                    android:textColor="#A7F3D0"
                     android:textSize="11sp"
                     android:textStyle="bold"
                     android:visibility="gone" />
@@ -63,22 +76,27 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnSincronizarNube"
-                style="@style/Widget.Material3.Button.TonalButton"
+                style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="40dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:paddingHorizontal="14dp"
                 android:text="Sincronizar"
-                android:textColor="@color/cannon_navy"
+                android:textColor="@color/white"
                 android:textSize="12sp"
                 android:textStyle="bold"
-                app:backgroundTint="@color/white"
+                app:backgroundTint="#26FFFFFF"
+                app:cornerRadius="20dp"
                 app:icon="@drawable/ic_cloud_sync"
-                app:iconTint="@color/cannon_navy"
-                app:iconSize="18dp"
-                app:cornerRadius="18dp" />
+                app:iconSize="17dp"
+                app:iconTint="@color/white"
+                app:strokeColor="#4DFFFFFF"
+                app:strokeWidth="1dp" />
 
         </LinearLayout>
 
-        <!-- Contenedor Flexible Central (Evita solapamiento con Navigation Bar en cualquier pantalla) -->
+        <!-- Contenedor Flexible Central -->
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
@@ -92,653 +110,209 @@
                 android:fillViewport="true"
                 android:visibility="visible">
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <!-- Filtro Rápido por Categorías -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
-                    android:text="Categorías Rápidas"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
-
-                <HorizontalScrollView
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    android:scrollbars="none">
+                    android:orientation="vertical"
+                    android:paddingHorizontal="16dp"
+                    android:paddingTop="14dp"
+                    android:paddingBottom="24dp">
 
-                    <com.google.android.material.chip.ChipGroup
-                        android:id="@+id/chipGroupCategorias"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        app:singleLine="true"
-                        app:singleSelection="true">
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chipCatTodos"
-                            style="@style/Widget.Material3.Chip.Filter"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:checked="true"
-                            android:text="Todos" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chipCatQuilts"
-                            style="@style/Widget.Material3.Chip.Filter"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Quilts" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chipCatSabanas"
-                            style="@style/Widget.Material3.Chip.Filter"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Sábanas" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chipCatPlumones"
-                            style="@style/Widget.Material3.Chip.Filter"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Plumones" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chipCatAlmohadas"
-                            style="@style/Widget.Material3.Chip.Filter"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Almohadas" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chipCatToppers"
-                            style="@style/Widget.Material3.Chip.Filter"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Toppers" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chipCatCojines"
-                            style="@style/Widget.Material3.Chip.Filter"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Cojines" />
-                    </com.google.android.material.chip.ChipGroup>
-                </HorizontalScrollView>
-
-                <!-- Tarjeta Selección de Producto -->
-                <com.google.android.material.card.MaterialCardView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    app:cardBackgroundColor="@color/surface"
-                    app:cardCornerRadius="16dp"
-                    app:cardElevation="2dp"
-                    app:strokeColor="@color/card_stroke"
-                    app:strokeWidth="1dp">
-
-                    <LinearLayout
+                    <!-- Filtro Rápido por Categorías -->
+                    <HorizontalScrollView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="16dp">
+                        android:layout_marginBottom="14dp"
+                        android:scrollbars="none">
 
-                        <!-- Buscador de Producto y Escáner SKU con Cámara -->
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical">
-
-                            <com.google.android.material.textfield.TextInputLayout
-                                android:id="@+id/tilBuscarProducto"
-                                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:hint="Buscar o Seleccionar Producto"
-                                app:boxCornerRadiusBottomEnd="12dp"
-                                app:boxCornerRadiusBottomStart="12dp"
-                                app:boxCornerRadiusTopEnd="12dp"
-                                app:boxCornerRadiusTopStart="12dp"
-                                app:endIconMode="clear_text"
-                                app:startIconDrawable="@drawable/ic_search"
-                                app:startIconTint="@color/text_secondary">
-
-                                <AutoCompleteTextView
-                                    android:id="@+id/autoCompleteProducto"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:completionThreshold="1"
-                                    android:inputType="text" />
-                            </com.google.android.material.textfield.TextInputLayout>
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btnEscanearSku"
-                                style="@style/Widget.Material3.Button.TonalButton"
-                                android:layout_width="56dp"
-                                android:layout_height="56dp"
-                                android:layout_marginStart="8dp"
-                                android:contentDescription="Escanear SKU con Cámara"
-                                android:insetLeft="0dp"
-                                android:insetTop="0dp"
-                                android:insetRight="0dp"
-                                android:insetBottom="0dp"
-                                android:padding="0dp"
-                                app:backgroundTint="@color/cannon_navy_surface"
-                                app:cornerRadius="14dp"
-                                app:icon="@drawable/ic_qr_code_scanner"
-                                app:iconGravity="textStart"
-                                app:iconPadding="0dp"
-                                app:iconSize="28dp"
-                                app:iconTint="@color/cannon_navy"
-                                app:strokeColor="@color/card_stroke"
-                                app:strokeWidth="1dp" />
-                        </LinearLayout>
-
-                        <!-- Acciones Rápidas: Ver Catálogo Completo y Añadir Producto -->
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:orientation="horizontal">
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btnVerTodosLosProductos"
-                                style="@style/Widget.Material3.Button.TonalButton"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:layout_marginEnd="8dp"
-                                android:text="Ver todos los productos"
-                                android:textColor="@color/primary_brand"
-                                android:textSize="12sp"
-                                app:icon="@drawable/ic_inventory"
-                                app:iconSize="16dp"
-                                app:iconTint="@color/primary_brand" />
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btnAgregarProductoCotizador"
-                                style="@style/Widget.Material3.Button.OutlinedButton"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Añadir"
-                                android:textColor="@color/primary_brand"
-                                android:textSize="12sp"
-                                app:icon="@drawable/ic_add"
-                                app:iconSize="16dp"
-                                app:iconTint="@color/primary_brand"
-                                app:strokeColor="@color/card_stroke" />
-                        </LinearLayout>
-
-                        <!-- Selector Interactivo de Plazas con Chips -->
-                        <LinearLayout
-                            android:id="@+id/layoutSelectorPlaza"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="16dp"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginBottom="6dp"
-                                android:text="Selecciona Plaza:"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="12sp"
-                                android:textStyle="bold" />
-
-                            <HorizontalScrollView
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:scrollbars="none">
-
-                                <com.google.android.material.chip.ChipGroup
-                                    android:id="@+id/chipGroupPlazas"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    app:singleLine="true"
-                                    app:singleSelection="true" />
-                            </HorizontalScrollView>
-                        </LinearLayout>
-
-                        <!-- Configuración de Descuento -->
-                        <TextView
+                        <com.google.android.material.chip.ChipGroup
+                            android:id="@+id/chipGroupCategorias"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="16dp"
-                            android:layout_marginBottom="6dp"
-                            android:text="Porcentaje de Descuento:"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
+                            app:chipSpacingHorizontal="8dp"
+                            app:singleLine="true"
+                            app:singleSelection="true">
 
-                        <!-- Chips de descuentos directos (10, 20, 30, 40 y 50%) -->
-                        <HorizontalScrollView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginBottom="8dp"
-                            android:scrollbars="none">
-
-                            <com.google.android.material.chip.ChipGroup
-                                android:id="@+id/chipGroupDescuentos"
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chipCatTodos"
+                                style="@style/Widget.Cannon.Chip.Filter"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                app:singleLine="true"
-                                app:singleSelection="true">
+                                android:checked="true"
+                                android:text="Todos" />
 
-                                <com.google.android.material.chip.Chip
-                                    android:id="@+id/chipDcto10"
-                                    style="@style/Widget.Material3.Chip.Suggestion"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="10%" />
-
-                                <com.google.android.material.chip.Chip
-                                    android:id="@+id/chipDcto20"
-                                    style="@style/Widget.Material3.Chip.Suggestion"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="20%" />
-
-                                <com.google.android.material.chip.Chip
-                                    android:id="@+id/chipDcto30"
-                                    style="@style/Widget.Material3.Chip.Suggestion"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="30%" />
-
-                                <com.google.android.material.chip.Chip
-                                    android:id="@+id/chipDcto40"
-                                    style="@style/Widget.Material3.Chip.Suggestion"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="40%" />
-
-                                <com.google.android.material.chip.Chip
-                                    android:id="@+id/chipDcto50"
-                                    style="@style/Widget.Material3.Chip.Suggestion"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="50%" />
-                            </com.google.android.material.chip.ChipGroup>
-                        </HorizontalScrollView>
-
-                        <!-- Cuadrito para escribir otro descuento a mano + Guardar % -->
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-
-                            <com.google.android.material.textfield.TextInputLayout
-                                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:hint="Otro % (a mano)"
-                                app:boxCornerRadiusBottomEnd="12dp"
-                                app:boxCornerRadiusBottomStart="12dp"
-                                app:boxCornerRadiusTopEnd="12dp"
-                                app:boxCornerRadiusTopStart="12dp"
-                                app:suffixText="%">
-
-                                <com.google.android.material.textfield.TextInputEditText
-                                    android:id="@+id/etDescuento"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:inputType="numberDecimal"
-                                    android:selectAllOnFocus="true" />
-                            </com.google.android.material.textfield.TextInputLayout>
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btnFijarDescuentoLocal"
-                                style="@style/Widget.Material3.Button.TonalButton"
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chipCatQuilts"
+                                style="@style/Widget.Cannon.Chip.Filter"
                                 android:layout_width="wrap_content"
-                                android:layout_height="54dp"
-                                android:layout_marginStart="8dp"
-                                android:insetTop="0dp"
-                                android:insetBottom="0dp"
-                                android:text="Guardar %"
-                                android:textColor="@color/white"
-                                android:textSize="12sp"
-                                android:textStyle="bold"
-                                app:backgroundTint="@color/cannon_navy"
-                                app:cornerRadius="12dp" />
-                        </LinearLayout>
+                                android:layout_height="wrap_content"
+                                android:text="Quilts" />
 
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chipCatSabanas"
+                                style="@style/Widget.Cannon.Chip.Filter"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Sábanas" />
 
-                <!-- Tarjeta Destacada de Resultado de Cotización Estilo Cannon -->
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/cardResultado"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="24dp"
-                    app:cardBackgroundColor="@color/surface"
-                    app:cardCornerRadius="20dp"
-                    app:cardElevation="2dp"
-                    app:strokeColor="@color/card_stroke"
-                    app:strokeWidth="1dp">
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chipCatPlumones"
+                                style="@style/Widget.Cannon.Chip.Filter"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Plumones" />
 
-                    <LinearLayout
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chipCatAlmohadas"
+                                style="@style/Widget.Cannon.Chip.Filter"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Almohadas" />
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chipCatToppers"
+                                style="@style/Widget.Cannon.Chip.Filter"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Toppers" />
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chipCatCojines"
+                                style="@style/Widget.Cannon.Chip.Filter"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Cojines" />
+                        </com.google.android.material.chip.ChipGroup>
+                    </HorizontalScrollView>
+
+                    <!-- Tarjeta Selección de Producto y Descuento -->
+                    <com.google.android.material.card.MaterialCardView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="20dp">
+                        android:layout_marginBottom="16dp"
+                        app:cardBackgroundColor="@color/surface"
+                        app:cardCornerRadius="20dp"
+                        app:cardElevation="1.5dp"
+                        app:strokeColor="@color/card_stroke"
+                        app:strokeWidth="1dp">
 
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:orientation="vertical">
-
-                                <TextView
-                                    android:id="@+id/tvResumenProducto"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:ellipsize="end"
-                                    android:maxLines="2"
-                                    android:text="Selecciona un producto"
-                                    android:textColor="@color/text_primary"
-                                    android:textSize="18sp"
-                                    android:textStyle="bold" />
-
-                                <TextView
-                                    android:id="@+id/tvResumenPlaza"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="2dp"
-                                    android:text="Plaza: -"
-                                    android:textColor="@color/text_secondary"
-                                    android:textSize="13sp" />
-
-                                <TextView
-                                    android:id="@+id/tvResumenSku"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="2dp"
-                                    android:text="SKU: -"
-                                    android:textColor="@color/text_tertiary"
-                                    android:textSize="11sp"
-                                    android:visibility="gone" />
-                            </LinearLayout>
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btnEditarProductoCotizador"
-                                style="@style/Widget.Material3.Button.OutlinedButton"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="8dp"
-                                android:text="Editar"
-                                android:textColor="@color/cannon_navy"
-                                android:textSize="12sp"
-                                app:icon="@drawable/ic_edit"
-                                app:iconSize="16dp"
-                                app:iconTint="@color/cannon_navy"
-                                app:strokeColor="@color/card_stroke"
-                                android:visibility="gone" />
-                        </LinearLayout>
-
-                        <!-- Fila de Precio Base y Descuento -->
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="14dp"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-
-                            <TextView
-                                android:id="@+id/tvPrecioBase"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Precio Normal: $0"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="15sp" />
-
-                            <TextView
-                                android:id="@+id/tvBadgeDescuento"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="10dp"
-                                android:background="@drawable/bg_discount_badge"
-                                android:paddingHorizontal="10dp"
-                                android:paddingVertical="4dp"
-                                android:text="-0%"
-                                android:textColor="@color/cannon_red"
-                                android:textSize="13sp"
-                                android:textStyle="bold"
-                                android:visibility="gone" />
-                        </LinearLayout>
-
-                        <!-- Ahorro Total con Badge Suave -->
-                        <TextView
-                            android:id="@+id/tvAhorro"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:background="@drawable/bg_saving_badge"
-                            android:paddingHorizontal="10dp"
-                            android:paddingVertical="4dp"
-                            android:text="💰 Ahorras: $0"
-                            android:textColor="@color/saving_text"
-                            android:textSize="13sp"
-                            android:textStyle="bold"
-                            android:visibility="gone" />
-
-                        <!-- Contenedor Premium de Total a Pagar -->
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="16dp"
-                            android:background="@drawable/bg_total_container"
-                            android:gravity="center"
                             android:orientation="vertical"
-                            android:paddingVertical="18dp"
-                            android:paddingHorizontal="16dp">
+                            android:padding="16dp">
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:letterSpacing="0.1"
-                                android:text="TOTAL A PAGAR"
-                                android:textColor="@color/cannon_navy"
-                                android:textSize="12sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:id="@+id/tvPrecioFinal"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="4dp"
-                                android:text="$0"
-                                android:textColor="@color/cannon_navy_dark"
-                                android:textSize="38sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-
-                        <!-- Comparativa en Vivo: Sistema (XLSX) vs Internet (cannonhome.cl) -->
-                        <LinearLayout
-                            android:id="@+id/layoutComparativaWeb"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="14dp"
-                            android:background="@drawable/bg_web_compare_container"
-                            android:orientation="vertical"
-                            android:padding="14dp"
-                            android:visibility="gone">
-
+                            <!-- Buscador de Producto y Escáner SKU con Cámara -->
                             <LinearLayout
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:gravity="center_vertical"
                                 android:orientation="horizontal">
 
-                                <TextView
+                                <com.google.android.material.textfield.TextInputLayout
+                                    android:id="@+id/tilBuscarProducto"
+                                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
                                     android:layout_width="0dp"
                                     android:layout_height="wrap_content"
                                     android:layout_weight="1"
-                                    android:text="Comparativa Web (cannonhome.cl)"
-                                    android:textColor="@color/text_primary"
-                                    android:textSize="12sp"
-                                    android:textStyle="bold" />
+                                    android:hint="Buscar producto..."
+                                    app:boxBackgroundColor="@color/background"
+                                    app:boxCornerRadiusBottomEnd="14dp"
+                                    app:boxCornerRadiusBottomStart="14dp"
+                                    app:boxCornerRadiusTopEnd="14dp"
+                                    app:boxCornerRadiusTopStart="14dp"
+                                    app:boxStrokeColor="@color/card_stroke"
+                                    app:endIconMode="clear_text"
+                                    app:startIconDrawable="@drawable/ic_search"
+                                    app:startIconTint="@color/text_secondary">
 
-                                <TextView
-                                    android:id="@+id/tvEstadoWeb"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:background="@drawable/bg_status_cloud"
-                                    android:text="Consultando..."
-                                    android:textColor="@color/cannon_navy"
-                                    android:textSize="10sp"
-                                    android:textStyle="bold" />
+                                    <AutoCompleteTextView
+                                        android:id="@+id/autoCompleteProducto"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:completionThreshold="1"
+                                        android:inputType="text" />
+                                </com.google.android.material.textfield.TextInputLayout>
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btnEscanearSku"
+                                    style="@style/Widget.Material3.Button"
+                                    android:layout_width="56dp"
+                                    android:layout_height="56dp"
+                                    android:layout_marginStart="10dp"
+                                    android:contentDescription="Escanear SKU con Cámara"
+                                    android:insetLeft="0dp"
+                                    android:insetTop="0dp"
+                                    android:insetRight="0dp"
+                                    android:insetBottom="0dp"
+                                    android:padding="0dp"
+                                    app:backgroundTint="@color/cannon_navy_dark"
+                                    app:cornerRadius="14dp"
+                                    app:icon="@drawable/ic_qr_code_scanner"
+                                    app:iconGravity="textStart"
+                                    app:iconPadding="0dp"
+                                    app:iconSize="26dp"
+                                    app:iconTint="@color/white" />
                             </LinearLayout>
 
-                            <TextView
-                                android:id="@+id/tvNombreWeb"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="4dp"
-                                android:ellipsize="end"
-                                android:maxLines="2"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="12sp"
-                                android:visibility="gone" />
-
+                            <!-- Acciones Rápidas: Ver Catálogo Completo y Añadir Producto -->
                             <LinearLayout
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="10dp"
-                                android:baselineAligned="false"
                                 android:orientation="horizontal">
 
-                                <!-- Columna Sistema (XLSX) -->
-                                <LinearLayout
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btnVerTodosLosProductos"
+                                    style="@style/Widget.Material3.Button.OutlinedButton"
                                     android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
+                                    android:layout_height="40dp"
+                                    android:layout_marginEnd="6dp"
                                     android:layout_weight="1"
-                                    android:orientation="vertical"
-                                    android:paddingEnd="8dp">
+                                    android:insetTop="0dp"
+                                    android:insetBottom="0dp"
+                                    android:text="Ver catálogo"
+                                    android:textColor="@color/cannon_navy_dark"
+                                    android:textSize="12sp"
+                                    android:textStyle="bold"
+                                    app:cornerRadius="12dp"
+                                    app:icon="@drawable/ic_inventory"
+                                    app:iconGravity="textStart"
+                                    app:iconPadding="6dp"
+                                    app:iconSize="16dp"
+                                    app:iconTint="@color/cannon_navy_dark"
+                                    app:strokeColor="@color/card_stroke"
+                                    app:strokeWidth="1dp" />
 
-                                    <TextView
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:text="SISTEMA (XLSX)"
-                                        android:textColor="@color/text_tertiary"
-                                        android:textSize="10sp"
-                                        android:textStyle="bold" />
-
-                                    <TextView
-                                        android:id="@+id/tvCompSistemaFinal"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:layout_marginTop="2dp"
-                                        android:text="$0"
-                                        android:textColor="@color/cannon_navy_dark"
-                                        android:textSize="18sp"
-                                        android:textStyle="bold" />
-
-                                    <TextView
-                                        android:id="@+id/tvCompSistemaDcto"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:text="0% dcto"
-                                        android:textColor="@color/cannon_navy"
-                                        android:textSize="12sp"
-                                        android:textStyle="bold" />
-
-                                    <TextView
-                                        android:id="@+id/tvCompSistemaNormal"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:text="Normal: $0"
-                                        android:textColor="@color/text_secondary"
-                                        android:textSize="11sp" />
-                                </LinearLayout>
-
-                                <View
-                                    android:layout_width="1dp"
-                                    android:layout_height="match_parent"
-                                    android:background="@color/divider" />
-
-                                <!-- Columna Internet (cannonhome.cl) -->
-                                <LinearLayout
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btnAgregarProductoCotizador"
+                                    style="@style/Widget.Material3.Button.OutlinedButton"
                                     android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
+                                    android:layout_height="40dp"
+                                    android:layout_marginStart="6dp"
                                     android:layout_weight="1"
-                                    android:orientation="vertical"
-                                    android:paddingStart="10dp">
-
-                                    <TextView
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:text="WEB CANNON"
-                                        android:textColor="@color/text_tertiary"
-                                        android:textSize="10sp"
-                                        android:textStyle="bold" />
-
-                                    <TextView
-                                        android:id="@+id/tvCompWebFinal"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:layout_marginTop="2dp"
-                                        android:text="..."
-                                        android:textColor="@color/cannon_red"
-                                        android:textSize="18sp"
-                                        android:textStyle="bold" />
-
-                                    <TextView
-                                        android:id="@+id/tvCompWebDcto"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:text="-"
-                                        android:textColor="@color/cannon_red"
-                                        android:textSize="12sp"
-                                        android:textStyle="bold" />
-
-                                    <TextView
-                                        android:id="@+id/tvCompWebNormal"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:text="Normal: -"
-                                        android:textColor="@color/text_secondary"
-                                        android:textSize="11sp" />
-                                </LinearLayout>
+                                    android:insetTop="0dp"
+                                    android:insetBottom="0dp"
+                                    android:text="Añadir"
+                                    android:textColor="@color/cannon_navy_dark"
+                                    android:textSize="12sp"
+                                    android:textStyle="bold"
+                                    app:cornerRadius="12dp"
+                                    app:icon="@drawable/ic_add"
+                                    app:iconGravity="textStart"
+                                    app:iconPadding="6dp"
+                                    app:iconSize="16dp"
+                                    app:iconTint="@color/cannon_navy_dark"
+                                    app:strokeColor="@color/card_stroke"
+                                    app:strokeWidth="1dp" />
                             </LinearLayout>
 
-                            <TextView
-                                android:id="@+id/tvCompDiferencia"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="8dp"
-                                android:background="@drawable/bg_status_cloud"
-                                android:gravity="center"
-                                android:paddingHorizontal="8dp"
-                                android:paddingVertical="4dp"
-                                android:textColor="@color/cannon_navy_dark"
-                                android:textSize="11sp"
-                                android:textStyle="bold"
-                                android:visibility="gone" />
-
+                            <!-- Selector Interactivo de Plazas con Chips -->
                             <LinearLayout
-                                android:id="@+id/layoutAccionesWeb"
+                                android:id="@+id/layoutSelectorPlaza"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="12dp"
+                                android:layout_marginTop="16dp"
                                 android:orientation="vertical"
                                 android:visibility="gone">
 
@@ -746,199 +320,685 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_marginBottom="6dp"
-                                    android:text="Aplicar % de la web:"
-                                    android:textColor="#475569"
+                                    android:letterSpacing="0.08"
+                                    android:text="PLAZA"
+                                    android:textColor="@color/text_tertiary"
                                     android:textSize="11sp"
                                     android:textStyle="bold" />
+
+                                <HorizontalScrollView
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:scrollbars="none">
+
+                                    <com.google.android.material.chip.ChipGroup
+                                        android:id="@+id/chipGroupPlazas"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        app:chipSpacingHorizontal="8dp"
+                                        app:singleLine="true"
+                                        app:singleSelection="true" />
+                                </HorizontalScrollView>
+                            </LinearLayout>
+
+                            <!-- Configuración de Descuento -->
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="14dp"
+                                android:layout_marginBottom="6dp"
+                                android:letterSpacing="0.08"
+                                android:text="DESCUENTO"
+                                android:textColor="@color/text_tertiary"
+                                android:textSize="11sp"
+                                android:textStyle="bold" />
+
+                            <HorizontalScrollView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginBottom="8dp"
+                                android:scrollbars="none">
+
+                                <com.google.android.material.chip.ChipGroup
+                                    android:id="@+id/chipGroupDescuentos"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    app:chipSpacingHorizontal="8dp"
+                                    app:singleLine="true"
+                                    app:singleSelection="true">
+
+                                    <com.google.android.material.chip.Chip
+                                        android:id="@+id/chipDcto10"
+                                        style="@style/Widget.Cannon.Chip.Action"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="10%" />
+
+                                    <com.google.android.material.chip.Chip
+                                        android:id="@+id/chipDcto20"
+                                        style="@style/Widget.Cannon.Chip.Action"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="20%" />
+
+                                    <com.google.android.material.chip.Chip
+                                        android:id="@+id/chipDcto30"
+                                        style="@style/Widget.Cannon.Chip.Action"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="30%" />
+
+                                    <com.google.android.material.chip.Chip
+                                        android:id="@+id/chipDcto40"
+                                        style="@style/Widget.Cannon.Chip.Action"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="40%" />
+
+                                    <com.google.android.material.chip.Chip
+                                        android:id="@+id/chipDcto50"
+                                        style="@style/Widget.Cannon.Chip.Action"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="50%" />
+                                </com.google.android.material.chip.ChipGroup>
+                            </HorizontalScrollView>
+
+                            <!-- Cuadrito para escribir otro descuento a mano + Guardar % -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <com.google.android.material.textfield.TextInputLayout
+                                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:hint="Otro % (manual)"
+                                    app:boxBackgroundColor="@color/background"
+                                    app:boxCornerRadiusBottomEnd="14dp"
+                                    app:boxCornerRadiusBottomStart="14dp"
+                                    app:boxCornerRadiusTopEnd="14dp"
+                                    app:boxCornerRadiusTopStart="14dp"
+                                    app:boxStrokeColor="@color/card_stroke"
+                                    app:suffixText="%">
+
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/etDescuento"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:inputType="numberDecimal"
+                                        android:selectAllOnFocus="true" />
+                                </com.google.android.material.textfield.TextInputLayout>
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btnFijarDescuentoLocal"
+                                    style="@style/Widget.Material3.Button"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="54dp"
+                                    android:layout_marginStart="10dp"
+                                    android:insetTop="0dp"
+                                    android:insetBottom="0dp"
+                                    android:paddingHorizontal="16dp"
+                                    android:text="Guardar %"
+                                    android:textColor="@color/white"
+                                    android:textSize="13sp"
+                                    android:textStyle="bold"
+                                    app:backgroundTint="@color/cannon_navy_dark"
+                                    app:cornerRadius="14dp" />
+                            </LinearLayout>
+
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- Tarjeta Destacada de Resultado de Cotización Estilo Cannon -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/cardResultado"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        app:cardBackgroundColor="@color/surface"
+                        app:cardCornerRadius="22dp"
+                        app:cardElevation="2dp"
+                        app:strokeColor="@color/card_stroke"
+                        app:strokeWidth="1dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="18dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:id="@+id/tvResumenProducto"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:ellipsize="end"
+                                        android:maxLines="2"
+                                        android:text="Selecciona un producto"
+                                        android:textColor="@color/text_primary"
+                                        android:textSize="18sp"
+                                        android:textStyle="bold" />
+
+                                    <TextView
+                                        android:id="@+id/tvResumenPlaza"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="2dp"
+                                        android:text="Plaza: -"
+                                        android:textColor="@color/text_secondary"
+                                        android:textSize="13sp" />
+
+                                    <TextView
+                                        android:id="@+id/tvResumenSku"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="2dp"
+                                        android:text="SKU: -"
+                                        android:textColor="@color/text_tertiary"
+                                        android:textSize="11.5sp"
+                                        android:visibility="gone" />
+                                </LinearLayout>
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btnEditarProductoCotizador"
+                                    style="@style/Widget.Material3.Button.OutlinedButton"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="38dp"
+                                    android:layout_marginStart="8dp"
+                                    android:insetTop="0dp"
+                                    android:insetBottom="0dp"
+                                    android:paddingHorizontal="14dp"
+                                    android:text="Editar"
+                                    android:textColor="@color/cannon_navy_dark"
+                                    android:textSize="12sp"
+                                    android:textStyle="bold"
+                                    android:visibility="gone"
+                                    app:cornerRadius="20dp"
+                                    app:icon="@drawable/ic_edit"
+                                    app:iconSize="15dp"
+                                    app:iconTint="@color/cannon_navy_dark"
+                                    app:strokeColor="@color/card_stroke"
+                                    app:strokeWidth="1dp" />
+                            </LinearLayout>
+
+                            <!-- Fila de Precio Base, Badge Descuento Rojo Cannon y Ahorro -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    android:id="@+id/tvPrecioBase"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Normal $0"
+                                    android:textColor="@color/text_secondary"
+                                    android:textSize="13.5sp" />
+
+                                <TextView
+                                    android:id="@+id/tvBadgeDescuento"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="8dp"
+                                    android:background="@drawable/bg_discount_badge"
+                                    android:paddingHorizontal="10dp"
+                                    android:paddingVertical="3dp"
+                                    android:text="-0%"
+                                    android:textColor="@color/white"
+                                    android:textSize="12sp"
+                                    android:textStyle="bold"
+                                    android:visibility="gone" />
+
+                                <TextView
+                                    android:id="@+id/tvAhorro"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="8dp"
+                                    android:background="@drawable/bg_saving_badge"
+                                    android:ellipsize="end"
+                                    android:maxLines="1"
+                                    android:paddingHorizontal="10dp"
+                                    android:paddingVertical="3dp"
+                                    android:text="Ahorras $0"
+                                    android:textColor="@color/saving_text"
+                                    android:textSize="12sp"
+                                    android:textStyle="bold"
+                                    android:visibility="gone" />
+                            </LinearLayout>
+
+                            <!-- Contenedor Hero de Total a Pagar -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="14dp"
+                                android:background="@drawable/bg_total_container"
+                                android:gravity="center"
+                                android:orientation="vertical"
+                                android:paddingHorizontal="16dp"
+                                android:paddingVertical="18dp">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:letterSpacing="0.12"
+                                    android:text="TOTAL A PAGAR"
+                                    android:textColor="@color/cannon_navy_text_muted"
+                                    android:textSize="11sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:id="@+id/tvPrecioFinal"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="4dp"
+                                    android:text="$0"
+                                    android:textColor="@color/white"
+                                    android:textSize="36sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <!-- Comparativa en Vivo: Sistema (XLSX) vs Internet (cannonhome.cl) -->
+                            <LinearLayout
+                                android:id="@+id/layoutComparativaWeb"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="16dp"
+                                android:background="@drawable/bg_web_compare_container"
+                                android:orientation="vertical"
+                                android:paddingHorizontal="16dp"
+                                android:paddingTop="18dp"
+                                android:paddingBottom="16dp"
+                                android:visibility="gone">
 
                                 <LinearLayout
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
+                                    android:gravity="center_vertical"
                                     android:orientation="horizontal">
 
-                                    <com.google.android.material.button.MaterialButton
-                                        android:id="@+id/btnUsarDescuentoWeb"
-                                        style="@style/Widget.Material3.Button.TonalButton"
+                                    <TextView
                                         android:layout_width="0dp"
-                                        android:layout_height="44dp"
-                                        android:layout_marginEnd="6dp"
+                                        android:layout_height="wrap_content"
                                         android:layout_weight="1"
-                                        android:insetTop="0dp"
-                                        android:insetBottom="0dp"
-                                        android:paddingHorizontal="10dp"
-                                        android:text="Temporal"
-                                        android:textColor="@color/cannon_navy"
+                                        android:text="Comparativa Web (cannonhome.cl)"
+                                        android:textColor="@color/text_primary"
                                         android:textSize="13sp"
-                                        android:textStyle="bold"
-                                        app:backgroundTint="@color/cannon_navy_surface"
-                                        app:cornerRadius="10dp" />
+                                        android:textStyle="bold" />
+
+                                    <TextView
+                                        android:id="@+id/tvEstadoWeb"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:background="@drawable/bg_web_status_pill"
+                                        android:text="Consultando en vivo..."
+                                        android:textColor="@color/cannon_navy_dark"
+                                        android:textSize="10.5sp"
+                                        android:textStyle="bold" />
+                                </LinearLayout>
+
+                                <TextView
+                                    android:id="@+id/tvNombreWeb"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="6dp"
+                                    android:ellipsize="end"
+                                    android:maxLines="2"
+                                    android:textColor="@color/text_secondary"
+                                    android:textSize="12sp"
+                                    android:visibility="gone" />
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="12dp"
+                                    android:baselineAligned="false"
+                                    android:orientation="horizontal">
+
+                                    <!-- Columna Sistema (XLSX) -->
+                                    <LinearLayout
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:gravity="center_horizontal"
+                                        android:orientation="vertical"
+                                        android:paddingEnd="8dp">
+
+                                        <TextView
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:letterSpacing="0.06"
+                                            android:text="SISTEMA"
+                                            android:textColor="@color/text_tertiary"
+                                            android:textSize="10.5sp"
+                                            android:textStyle="bold" />
+
+                                        <TextView
+                                            android:id="@+id/tvCompSistemaFinal"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:layout_marginTop="3dp"
+                                            android:text="$0"
+                                            android:textColor="@color/cannon_navy_dark"
+                                            android:textSize="20sp"
+                                            android:textStyle="bold" />
+
+                                        <TextView
+                                            android:id="@+id/tvCompSistemaDcto"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:text="0% dcto"
+                                            android:textColor="@color/cannon_navy"
+                                            android:textSize="12sp"
+                                            android:textStyle="bold" />
+
+                                        <TextView
+                                            android:id="@+id/tvCompSistemaNormal"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:layout_marginTop="2dp"
+                                            android:text="Normal: $0"
+                                            android:textColor="@color/text_secondary"
+                                            android:textSize="11sp" />
+                                    </LinearLayout>
+
+                                    <View
+                                        android:layout_width="1dp"
+                                        android:layout_height="match_parent"
+                                        android:layout_marginVertical="4dp"
+                                        android:background="@color/divider" />
+
+                                    <!-- Columna Internet (cannonhome.cl) -->
+                                    <LinearLayout
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:gravity="center_horizontal"
+                                        android:orientation="vertical"
+                                        android:paddingStart="8dp">
+
+                                        <TextView
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:letterSpacing="0.06"
+                                            android:text="WEB CANNON"
+                                            android:textColor="@color/text_tertiary"
+                                            android:textSize="10.5sp"
+                                            android:textStyle="bold" />
+
+                                        <TextView
+                                            android:id="@+id/tvCompWebFinal"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:layout_marginTop="3dp"
+                                            android:text="..."
+                                            android:textColor="@color/cannon_red"
+                                            android:textSize="20sp"
+                                            android:textStyle="bold" />
+
+                                        <TextView
+                                            android:id="@+id/tvCompWebDcto"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:gravity="center"
+                                            android:text="-"
+                                            android:textColor="@color/cannon_red"
+                                            android:textSize="12sp"
+                                            android:textStyle="bold" />
+
+                                        <TextView
+                                            android:id="@+id/tvCompWebNormal"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:layout_marginTop="2dp"
+                                            android:text="Normal: -"
+                                            android:textColor="@color/text_secondary"
+                                            android:textSize="11sp" />
+                                    </LinearLayout>
+                                </LinearLayout>
+
+                                <TextView
+                                    android:id="@+id/tvCompDiferencia"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="12dp"
+                                    android:background="@drawable/bg_web_diff_pill"
+                                    android:gravity="center"
+                                    android:paddingHorizontal="12dp"
+                                    android:paddingVertical="7dp"
+                                    android:textColor="@color/cannon_navy_dark"
+                                    android:textSize="11.5sp"
+                                    android:textStyle="bold"
+                                    android:visibility="gone" />
+
+                                <LinearLayout
+                                    android:id="@+id/layoutAccionesWeb"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="14dp"
+                                    android:orientation="vertical"
+                                    android:visibility="gone">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginBottom="8dp"
+                                        android:text="Aplicar descuento web:"
+                                        android:textColor="@color/text_secondary"
+                                        android:textSize="11.5sp"
+                                        android:textStyle="bold" />
+
+                                    <LinearLayout
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:orientation="horizontal">
+
+                                        <com.google.android.material.button.MaterialButton
+                                            android:id="@+id/btnUsarDescuentoWeb"
+                                            style="@style/Widget.Material3.Button.TonalButton"
+                                            android:layout_width="0dp"
+                                            android:layout_height="44dp"
+                                            android:layout_marginEnd="6dp"
+                                            android:layout_weight="1"
+                                            android:insetTop="0dp"
+                                            android:insetBottom="0dp"
+                                            android:paddingHorizontal="10dp"
+                                            android:text="Temporal"
+                                            android:textColor="@color/cannon_navy_dark"
+                                            android:textSize="13sp"
+                                            android:textStyle="bold"
+                                            app:backgroundTint="@color/cannon_navy_surface"
+                                            app:cornerRadius="22dp" />
+
+                                        <com.google.android.material.button.MaterialButton
+                                            android:id="@+id/btnGuardarDescuentoWeb"
+                                            style="@style/Widget.Material3.Button"
+                                            android:layout_width="0dp"
+                                            android:layout_height="44dp"
+                                            android:layout_marginStart="6dp"
+                                            android:layout_weight="1"
+                                            android:insetTop="0dp"
+                                            android:insetBottom="0dp"
+                                            android:paddingHorizontal="10dp"
+                                            android:text="Fijo"
+                                            android:textColor="@color/white"
+                                            android:textSize="13sp"
+                                            android:textStyle="bold"
+                                            app:backgroundTint="@color/cannon_navy_dark"
+                                            app:cornerRadius="22dp" />
+                                    </LinearLayout>
 
                                     <com.google.android.material.button.MaterialButton
-                                        android:id="@+id/btnGuardarDescuentoWeb"
-                                        style="@style/Widget.Material3.Button"
-                                        android:layout_width="0dp"
+                                        android:id="@+id/btnVerEnWeb"
+                                        style="@style/Widget.Material3.Button.OutlinedButton"
+                                        android:layout_width="match_parent"
                                         android:layout_height="44dp"
-                                        android:layout_marginStart="6dp"
-                                        android:layout_weight="1"
+                                        android:layout_marginTop="8dp"
                                         android:insetTop="0dp"
                                         android:insetBottom="0dp"
-                                        android:paddingHorizontal="10dp"
-                                        android:text="Fijo"
-                                        android:textColor="@color/white"
+                                        android:paddingHorizontal="12dp"
+                                        android:text="Abrir en cannonhome.cl"
+                                        android:textColor="@color/cannon_navy_dark"
                                         android:textSize="13sp"
                                         android:textStyle="bold"
-                                        app:backgroundTint="@color/cannon_navy"
-                                        app:cornerRadius="10dp" />
+                                        app:cornerRadius="22dp"
+                                        app:strokeColor="@color/cannon_navy_dark"
+                                        app:strokeWidth="1.2dp" />
                                 </LinearLayout>
 
                                 <com.google.android.material.button.MaterialButton
-                                    android:id="@+id/btnVerEnWeb"
-                                    style="@style/Widget.Material3.Button.OutlinedButton"
+                                    android:id="@+id/btnRegistrarSkuDesdeWeb"
+                                    style="@style/Widget.Material3.Button.TonalButton"
                                     android:layout_width="match_parent"
                                     android:layout_height="44dp"
-                                    android:layout_marginTop="8dp"
+                                    android:layout_marginTop="10dp"
                                     android:insetTop="0dp"
                                     android:insetBottom="0dp"
-                                    android:paddingHorizontal="12dp"
-                                    android:text="Entrar a la página web"
-                                    android:textColor="@color/cannon_navy"
+                                    android:text="Agregar producto con este SKU"
+                                    android:textColor="@color/cannon_navy_dark"
                                     android:textSize="13sp"
                                     android:textStyle="bold"
-                                    app:cornerRadius="10dp"
-                                    app:strokeColor="@color/cannon_navy"
-                                    app:strokeWidth="1.5dp" />
+                                    android:visibility="gone"
+                                    app:backgroundTint="@color/cannon_navy_surface"
+                                    app:cornerRadius="22dp"
+                                    app:icon="@drawable/ic_add"
+                                    app:iconGravity="textStart"
+                                    app:iconTint="@color/cannon_navy_dark" />
                             </LinearLayout>
 
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btnRegistrarSkuDesdeWeb"
-                                style="@style/Widget.Material3.Button.TonalButton"
-                                android:layout_width="match_parent"
-                                android:layout_height="44dp"
-                                android:layout_marginTop="10dp"
-                                android:insetTop="0dp"
-                                android:insetBottom="0dp"
-                                android:text="Agregar producto con este SKU"
-                                android:textColor="@color/cannon_navy"
-                                android:textSize="13sp"
-                                android:textStyle="bold"
-                                android:visibility="gone"
-                                app:backgroundTint="@color/cannon_navy_surface"
-                                app:cornerRadius="10dp"
-                                app:icon="@drawable/ic_add"
-                                app:iconGravity="textStart"
-                                app:iconTint="@color/cannon_navy" />
                         </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
 
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
+                </LinearLayout>
+            </androidx.core.widget.NestedScrollView>
 
-            </LinearLayout>
-        </androidx.core.widget.NestedScrollView>
-
-        <!-- SECCIÓN 2: CATÁLOGO DE PRODUCTOS -->
-        <LinearLayout
-            android:id="@+id/layoutCatalogo"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:visibility="gone">
-
-            <!-- Buscador en Catálogo -->
+            <!-- SECCIÓN 2: CATÁLOGO DE PRODUCTOS -->
             <LinearLayout
+                android:id="@+id/layoutCatalogo"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:orientation="vertical"
-                android:paddingHorizontal="16dp"
-                android:paddingTop="16dp"
-                android:paddingBottom="8dp">
+                android:visibility="gone">
 
+                <!-- Buscador en Catálogo -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
+                    android:orientation="vertical"
+                    android:paddingHorizontal="16dp"
+                    android:paddingTop="14dp"
+                    android:paddingBottom="8dp">
 
-                    <com.google.android.material.textfield.TextInputLayout
-                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                        android:layout_width="0dp"
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:hint="Buscar en el catálogo o SKU..."
-                        app:boxCornerRadiusBottomEnd="12dp"
-                        app:boxCornerRadiusBottomStart="12dp"
-                        app:boxCornerRadiusTopEnd="12dp"
-                        app:boxCornerRadiusTopStart="12dp"
-                        app:endIconMode="clear_text"
-                        app:startIconDrawable="@drawable/ic_search"
-                        app:startIconTint="@color/text_secondary">
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
 
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/etBuscarCatalogo"
-                            android:layout_width="match_parent"
+                        <com.google.android.material.textfield.TextInputLayout
+                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:inputType="text" />
-                    </com.google.android.material.textfield.TextInputLayout>
+                            android:layout_weight="1"
+                            android:hint="Buscar producto o SKU..."
+                            app:boxBackgroundColor="@color/surface"
+                            app:boxCornerRadiusBottomEnd="14dp"
+                            app:boxCornerRadiusBottomStart="14dp"
+                            app:boxCornerRadiusTopEnd="14dp"
+                            app:boxCornerRadiusTopStart="14dp"
+                            app:boxStrokeColor="@color/card_stroke"
+                            app:endIconMode="clear_text"
+                            app:startIconDrawable="@drawable/ic_search"
+                            app:startIconTint="@color/text_secondary">
 
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnEscanearSkuCatalogo"
-                        style="@style/Widget.Material3.Button.TonalButton"
-                        android:layout_width="56dp"
-                        android:layout_height="56dp"
-                        android:layout_marginStart="8dp"
-                        android:contentDescription="Escanear SKU con Cámara"
-                        android:insetLeft="0dp"
-                        android:insetTop="0dp"
-                        android:insetRight="0dp"
-                        android:insetBottom="0dp"
-                        android:padding="0dp"
-                        app:backgroundTint="@color/cannon_navy_surface"
-                        app:cornerRadius="14dp"
-                        app:icon="@drawable/ic_qr_code_scanner"
-                        app:iconGravity="textStart"
-                        app:iconPadding="0dp"
-                        app:iconSize="28dp"
-                        app:iconTint="@color/cannon_navy"
-                        app:strokeColor="@color/card_stroke"
-                        app:strokeWidth="1dp" />
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/etBuscarCatalogo"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="text" />
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnEscanearSkuCatalogo"
+                            style="@style/Widget.Material3.Button"
+                            android:layout_width="56dp"
+                            android:layout_height="56dp"
+                            android:layout_marginStart="10dp"
+                            android:contentDescription="Escanear SKU con Cámara"
+                            android:insetLeft="0dp"
+                            android:insetTop="0dp"
+                            android:insetRight="0dp"
+                            android:insetBottom="0dp"
+                            android:padding="0dp"
+                            app:backgroundTint="@color/cannon_navy_dark"
+                            app:cornerRadius="14dp"
+                            app:icon="@drawable/ic_qr_code_scanner"
+                            app:iconGravity="textStart"
+                            app:iconPadding="0dp"
+                            app:iconSize="26dp"
+                            app:iconTint="@color/white" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tvContadorProductos"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Cargando productos..."
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp" />
                 </LinearLayout>
 
-                <TextView
-                    android:id="@+id/tvContadorProductos"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="Cargando productos..."
-                    android:textColor="@color/text_secondary"
-                    android:textSize="12sp" />
+                <!-- Lista de Productos -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvCatalogo"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:clipToPadding="false"
+                    android:paddingBottom="96dp" />
+
             </LinearLayout>
 
-            <!-- Lista de Productos -->
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rvCatalogo"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:clipToPadding="false"
-                android:paddingBottom="88dp" />
-
-        </LinearLayout>
-
-        <!-- Botón Flotante para Agregar Producto en Catálogo -->
-        <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-            android:id="@+id/fabAgregarProducto"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom|end"
-            android:layout_marginEnd="16dp"
-            android:layout_marginBottom="16dp"
-            android:text="Nuevo Producto"
-            android:textColor="@color/white"
-            app:backgroundTint="@color/cannon_navy"
-            app:icon="@drawable/ic_add"
-            app:iconTint="@color/white"
-            android:visibility="gone" />
+            <!-- Botón Flotante para Agregar Producto en Catálogo -->
+            <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+                android:id="@+id/fabAgregarProducto"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|end"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="16dp"
+                android:text="Nuevo"
+                android:textColor="@color/white"
+                android:visibility="gone"
+                app:backgroundTint="@color/cannon_navy_dark"
+                app:cornerRadius="28dp"
+                app:icon="@drawable/ic_add"
+                app:iconTint="@color/white" />
 
         </FrameLayout>
+
+        <!-- Separador sutil sobre la barra inferior -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/divider" />
 
         <!-- Barra de Navegación Inferior Institucional -->
         <com.google.android.material.bottomnavigation.BottomNavigationView
@@ -946,9 +1006,10 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@color/surface"
-            app:elevation="8dp"
-            app:itemIconTint="@color/cannon_navy"
-            app:itemTextColor="@color/cannon_navy"
+            app:elevation="0dp"
+            app:itemActiveIndicatorStyle="@style/Widget.Cannon.BottomNav.Indicator"
+            app:itemIconTint="@color/bottom_nav_item_color"
+            app:itemTextColor="@color/bottom_nav_item_color"
             app:menu="@menu/bottom_nav_menu" />
 
     </LinearLayout>

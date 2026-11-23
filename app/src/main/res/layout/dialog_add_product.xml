@@ -13,11 +13,11 @@
         android:padding="22dp">
 
         <View
-            android:layout_width="40dp"
+            android:layout_width="44dp"
             android:layout_height="4dp"
             android:layout_gravity="center_horizontal"
-            android:layout_marginBottom="14dp"
-            android:background="@color/divider" />
+            android:layout_marginBottom="16dp"
+            android:background="@drawable/bg_sheet_handle" />
 
         <TextView
             android:id="@+id/tvDialogTitulo"
@@ -33,16 +33,16 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:layout_marginBottom="14dp"
-            android:text="Escribe el nombre, elige sus plazas y anota o escanea el SKU y precio de cada una"
+            android:layout_marginBottom="16dp"
+            android:text="Nombre, medidas, precios y SKU por plaza"
             android:textColor="@color/text_secondary"
-            android:textSize="12sp" />
+            android:textSize="12.5sp" />
 
         <!-- Nombre del Producto y % Descuento -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="14dp"
+            android:layout_marginBottom="16dp"
             android:orientation="horizontal">
 
             <com.google.android.material.textfield.TextInputLayout
@@ -53,10 +53,12 @@
                 android:layout_marginEnd="8dp"
                 android:layout_weight="1.45"
                 android:hint="Nombre del producto"
-                app:boxCornerRadiusBottomEnd="10dp"
-                app:boxCornerRadiusBottomStart="10dp"
-                app:boxCornerRadiusTopEnd="10dp"
-                app:boxCornerRadiusTopStart="10dp">
+                app:boxBackgroundColor="@color/background"
+                app:boxCornerRadiusBottomEnd="12dp"
+                app:boxCornerRadiusBottomStart="12dp"
+                app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusTopStart="12dp"
+                app:boxStrokeColor="@color/card_stroke">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etDialogNombre"
@@ -71,11 +73,13 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="0.65"
-                android:hint="% Dcto."
-                app:boxCornerRadiusBottomEnd="10dp"
-                app:boxCornerRadiusBottomStart="10dp"
-                app:boxCornerRadiusTopEnd="10dp"
-                app:boxCornerRadiusTopStart="10dp"
+                android:hint="% Dcto"
+                app:boxBackgroundColor="@color/background"
+                app:boxCornerRadiusBottomEnd="12dp"
+                app:boxCornerRadiusBottomStart="12dp"
+                app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusTopStart="12dp"
+                app:boxStrokeColor="@color/card_stroke"
                 app:suffixText="%">
 
                 <com.google.android.material.textfield.TextInputEditText
@@ -87,74 +91,76 @@
             </com.google.android.material.textfield.TextInputLayout>
         </LinearLayout>
 
-        <!-- Selector múltiple de plazas y medidas de almohada -->
+        <!-- Selector múltiple de plazas y medidas -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="6dp"
-            android:text="¿Qué plazas o medidas tiene? (toca para agregar o quitar)"
-            android:textColor="@color/text_secondary"
-            android:textSize="12sp"
+            android:layout_marginBottom="8dp"
+            android:text="Plazas y medidas"
+            android:textColor="@color/text_primary"
+            android:textSize="13sp"
             android:textStyle="bold" />
 
         <com.google.android.material.chip.ChipGroup
             android:id="@+id/chipGroupPlazasSugeridas"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="10dp">
+            android:layout_marginBottom="10dp"
+            app:chipSpacingHorizontal="8dp"
+            app:chipSpacingVertical="6dp">
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipPlaza10"
-                style="@style/Widget.Material3.Chip.Filter"
+                style="@style/Widget.Cannon.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="1.0" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipPlaza15"
-                style="@style/Widget.Material3.Chip.Filter"
+                style="@style/Widget.Cannon.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="1.5" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipPlaza20"
-                style="@style/Widget.Material3.Chip.Filter"
+                style="@style/Widget.Cannon.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="2.0" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipPlaza25"
-                style="@style/Widget.Material3.Chip.Filter"
+                style="@style/Widget.Cannon.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="2.5" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipPlaza30"
-                style="@style/Widget.Material3.Chip.Filter"
+                style="@style/Widget.Cannon.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="3.0" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipPlaza50x70"
-                style="@style/Widget.Material3.Chip.Filter"
+                style="@style/Widget.Cannon.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="50 x 70" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipPlaza50x90"
-                style="@style/Widget.Material3.Chip.Filter"
+                style="@style/Widget.Cannon.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="50 x 90" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipPlazaUnica"
-                style="@style/Widget.Material3.Chip.Filter"
+                style="@style/Widget.Cannon.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Única" />
@@ -170,19 +176,19 @@
             android:insetTop="0dp"
             android:insetBottom="0dp"
             android:text="Cojines (poner medida a mano)"
-            android:textColor="@color/cannon_navy"
+            android:textColor="@color/cannon_navy_dark"
             android:textSize="13sp"
             android:textStyle="bold"
             app:backgroundTint="@color/cannon_navy_surface"
-            app:cornerRadius="10dp"
+            app:cornerRadius="22dp"
             app:icon="@drawable/ic_add"
             app:iconGravity="textStart"
-            app:iconTint="@color/cannon_navy" />
+            app:iconTint="@color/cannon_navy_dark" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
+            android:layout_marginBottom="14dp"
             android:text="Ej. cojines: 50 x 50, 50 x 60, 30 x 50, 40 x 60"
             android:textColor="@color/text_secondary"
             android:textSize="11sp" />
@@ -192,9 +198,10 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
-            android:text="Precios y SKU por medida:"
-            android:textColor="@color/text_secondary"
-            android:textSize="12sp"
+            android:letterSpacing="0.06"
+            android:text="PRECIOS Y SKU POR MEDIDA"
+            android:textColor="@color/text_tertiary"
+            android:textSize="11sp"
             android:textStyle="bold" />
 
         <LinearLayout
@@ -207,14 +214,17 @@
         <!-- Botón Guardar Institucional Cannon -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnDialogGuardar"
+            style="@style/Widget.Material3.Button"
             android:layout_width="match_parent"
-            android:layout_height="54dp"
+            android:layout_height="52dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
             android:text="Guardar en Catálogo"
             android:textColor="@color/white"
             android:textSize="15sp"
             android:textStyle="bold"
-            app:backgroundTint="@color/cannon_navy"
-            app:cornerRadius="14dp"
+            app:backgroundTint="@color/cannon_navy_dark"
+            app:cornerRadius="24dp"
             app:icon="@drawable/ic_add"
             app:iconGravity="textStart"
             app:iconTint="@color/white" />

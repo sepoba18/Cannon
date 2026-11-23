@@ -5,7 +5,7 @@
     android:layout_height="wrap_content"
     android:layout_marginBottom="10dp"
     app:cardBackgroundColor="@color/background"
-    app:cardCornerRadius="12dp"
+    app:cardCornerRadius="16dp"
     app:cardElevation="0dp"
     app:strokeColor="@color/card_stroke"
     app:strokeWidth="1dp">
@@ -14,7 +14,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="12dp">
+        android:padding="14dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -28,7 +28,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Plaza: 1.5"
-                android:textColor="@color/cannon_navy"
+                android:textColor="@color/cannon_navy_dark"
                 android:textSize="14sp"
                 android:textStyle="bold" />
 
@@ -36,7 +36,7 @@
                 android:id="@+id/btnPlazaQuitarItem"
                 style="@style/Widget.Material3.Button.TextButton"
                 android:layout_width="wrap_content"
-                android:layout_height="36dp"
+                android:layout_height="34dp"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
                 android:minWidth="0dp"
@@ -58,10 +58,11 @@
             android:hint="Medida a mano (ej: 50 x 50, 30 x 50, 40 x 60)"
             android:visibility="gone"
             app:boxBackgroundColor="@color/surface"
-            app:boxCornerRadiusBottomEnd="10dp"
-            app:boxCornerRadiusBottomStart="10dp"
-            app:boxCornerRadiusTopEnd="10dp"
-            app:boxCornerRadiusTopStart="10dp">
+            app:boxCornerRadiusBottomEnd="12dp"
+            app:boxCornerRadiusBottomStart="12dp"
+            app:boxCornerRadiusTopEnd="12dp"
+            app:boxCornerRadiusTopStart="12dp"
+            app:boxStrokeColor="@color/card_stroke">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etPlazaMedidaCustomItem"
@@ -75,12 +76,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:hint="Precio Base ($)"
+            android:hint="Precio Normal ($)"
             app:boxBackgroundColor="@color/surface"
-            app:boxCornerRadiusBottomEnd="10dp"
-            app:boxCornerRadiusBottomStart="10dp"
-            app:boxCornerRadiusTopEnd="10dp"
-            app:boxCornerRadiusTopStart="10dp"
+            app:boxCornerRadiusBottomEnd="12dp"
+            app:boxCornerRadiusBottomStart="12dp"
+            app:boxCornerRadiusTopEnd="12dp"
+            app:boxCornerRadiusTopStart="12dp"
+            app:boxStrokeColor="@color/card_stroke"
             app:prefixText="$">
 
             <com.google.android.material.textfield.TextInputEditText
@@ -104,10 +106,11 @@
                 android:layout_weight="1"
                 android:hint="SKU / Código de barras"
                 app:boxBackgroundColor="@color/surface"
-                app:boxCornerRadiusBottomEnd="10dp"
-                app:boxCornerRadiusBottomStart="10dp"
-                app:boxCornerRadiusTopEnd="10dp"
-                app:boxCornerRadiusTopStart="10dp">
+                app:boxCornerRadiusBottomEnd="12dp"
+                app:boxCornerRadiusBottomStart="12dp"
+                app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusTopStart="12dp"
+                app:boxStrokeColor="@color/card_stroke">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etPlazaSkuItem"
@@ -118,7 +121,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnPlazaEscanearItem"
-                style="@style/Widget.Material3.Button.TonalButton"
+                style="@style/Widget.Material3.Button"
                 android:layout_width="wrap_content"
                 android:layout_height="52dp"
                 android:layout_marginStart="8dp"
@@ -126,14 +129,14 @@
                 android:insetBottom="0dp"
                 android:paddingHorizontal="12dp"
                 android:text="Escanear"
-                android:textColor="@color/cannon_navy"
+                android:textColor="@color/white"
                 android:textSize="12sp"
                 android:textStyle="bold"
-                app:backgroundTint="@color/cannon_navy_surface"
-                app:cornerRadius="10dp"
+                app:backgroundTint="@color/cannon_navy_dark"
+                app:cornerRadius="12dp"
                 app:icon="@drawable/ic_qr_code_scanner"
                 app:iconSize="18dp"
-                app:iconTint="@color/cannon_navy" />
+                app:iconTint="@color/white" />
         </LinearLayout>
 
     </LinearLayout>

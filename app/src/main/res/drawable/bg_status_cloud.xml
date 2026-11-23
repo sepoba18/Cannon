@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <corners android:radius="12dp" />
-    <solid android:color="@color/cloud_sync_bg" />
+    <corners android:radius="50dp" />
+    <solid android:color="#24FFFFFF" />
     <padding
         android:left="8dp"
         android:top="3dp"

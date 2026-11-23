@@ -18,8 +18,10 @@ import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -120,6 +122,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView())
+                .setAppearanceLightStatusBars(false);
 
         // Inicializar módulos de arquitectura
         repository = new CatalogRepository(this);
@@ -239,13 +243,13 @@ public class MainActivity extends AppCompatActivity {
                 scrollCotizador.setVisibility(View.VISIBLE);
                 layoutCatalogo.setVisibility(View.GONE);
                 fabAgregarProducto.setVisibility(View.GONE);
-                tvHeaderSubtitulo.setText("Cotizador y Calculadora de Descuentos");
+                tvHeaderSubtitulo.setText("Cotizador Comercial");
                 return true;
             } else if (id == R.id.nav_catalog) {
                 scrollCotizador.setVisibility(View.GONE);
                 layoutCatalogo.setVisibility(View.VISIBLE);
                 fabAgregarProducto.setVisibility(View.VISIBLE);
-                tvHeaderSubtitulo.setText("Catálogo de Productos y Plazas");
+                tvHeaderSubtitulo.setText("Catálogo de Productos");
                 actualizarListaCatalogo();
                 return true;
             }
@@ -518,11 +522,18 @@ public class MainActivity extends AppCompatActivity {
                 plazaObjetivo = listaPlazas.get(0);
             }
 
+            float density = getResources().getDisplayMetrics().density;
             for (String plaza : listaPlazas) {
                 Chip chip = new Chip(this);
                 chip.setText(plaza);
                 chip.setCheckable(true);
                 chip.setClickable(true);
+                chip.setCheckedIconVisible(false);
+                chip.setChipBackgroundColorResource(R.color.chip_bg_selector);
+                chip.setTextColor(ContextCompat.getColorStateList(this, R.color.chip_text_selector));
+                chip.setChipStrokeColorResource(R.color.chip_stroke_selector);
+                chip.setChipStrokeWidth(density);
+                chip.setChipCornerRadius(50f * density);
 
                 if (plaza.equals(plazaObjetivo)) {
                     chip.setChecked(true);
@@ -697,7 +708,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void actualizarUIPrecio() {
         if (precioSeleccionado <= 0) {
-            tvPrecioBase.setText("Precio Normal: $0");
+            tvPrecioBase.setText("Normal $0");
             tvPrecioBase.setPaintFlags(tvPrecioBase.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
             tvBadgeDescuento.setVisibility(View.GONE);
             tvAhorro.setVisibility(View.GONE);
@@ -720,16 +731,16 @@ public class MainActivity extends AppCompatActivity {
         CotizadorEngine.Resultado res = CotizadorEngine.calcular(precioSeleccionado, descuento);
 
         if (res.getPorcentajeDescuento() > 0) {
-            tvPrecioBase.setText(String.format(Locale.getDefault(), "Precio Normal: %s", CotizadorEngine.formatearMoneda(res.getPrecioBase())));
+            tvPrecioBase.setText(String.format(Locale.getDefault(), "Normal %s", CotizadorEngine.formatearMoneda(res.getPrecioBase())));
             tvPrecioBase.setPaintFlags(tvPrecioBase.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
 
             tvBadgeDescuento.setVisibility(View.VISIBLE);
             tvBadgeDescuento.setText(String.format(Locale.getDefault(), "-%.0f%%", res.getPorcentajeDescuento()));
 
             tvAhorro.setVisibility(View.VISIBLE);
-            tvAhorro.setText(String.format(Locale.getDefault(), "Ahorras: %s", CotizadorEngine.formatearMoneda(res.getMontoAhorro())));
+            tvAhorro.setText(String.format(Locale.getDefault(), "Ahorras %s", CotizadorEngine.formatearMoneda(res.getMontoAhorro())));
         } else {
-            tvPrecioBase.setText(String.format(Locale.getDefault(), "Precio Normal: %s", CotizadorEngine.formatearMoneda(res.getPrecioBase())));
+            tvPrecioBase.setText(String.format(Locale.getDefault(), "Normal %s", CotizadorEngine.formatearMoneda(res.getPrecioBase())));
             tvPrecioBase.setPaintFlags(tvPrecioBase.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
             tvBadgeDescuento.setVisibility(View.GONE);
             tvAhorro.setVisibility(View.GONE);
@@ -1204,16 +1215,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private static List<String> ordenarPlazasCannon(List<String> plazas) {
-        List<String> ordenBase = List.of("1.0", "1.5", "2.0", "2.5", "3.0", "50 x 70", "50 x 90", "Única");
-        plazas.sort((a, b) -> {
-            int ia = ordenBase.indexOf(a);
-            int ib = ordenBase.indexOf(b);
-            if (ia >= 0 && ib >= 0) return Integer.compare(ia, ib);
-            if (ia >= 0) return -1;
-            if (ib >= 0) return 1;
-            return a.compareToIgnoreCase(b);
-        });
-        return plazas;
+        return CatalogAdapter.ordenarPlazasCannon(plazas);
     }
 
     private void hideKeyboard() {
@@ -1231,9 +1233,9 @@ public class MainActivity extends AppCompatActivity {
         if (syncManager.tieneUrlConfigurada()) {
             tvEstadoNube.setVisibility(View.VISIBLE);
             if (!ultimaSync.isEmpty()) {
-                tvEstadoNube.setText("☁️ Azure: " + ultimaSync);
+                tvEstadoNube.setText("● Azure · " + ultimaSync);
             } else {
-                tvEstadoNube.setText("☁️ Nube Azure conectada");
+                tvEstadoNube.setText("● Azure conectada");
             }
         } else {
             tvEstadoNube.setVisibility(View.GONE);
@@ -1255,7 +1257,7 @@ public class MainActivity extends AppCompatActivity {
                 btnSincronizarNube.setText("Conectando...");
                 if (tvEstadoNube != null) {
                     tvEstadoNube.setVisibility(View.VISIBLE);
-                    tvEstadoNube.setText("⏳ Conectando con Azure...");
+                    tvEstadoNube.setText("Conectando con Azure...");
                 }
             }
 
@@ -1289,14 +1291,14 @@ public class MainActivity extends AppCompatActivity {
 
                 if (esErrorConexion) {
                     if (tvEstadoNube != null) {
-                        tvEstadoNube.setText("☁️ Catálogo local (Sin conexión)");
+                        tvEstadoNube.setText("Sin conexión · Catálogo local");
                     }
                     if (!silencioso) {
                         Toast.makeText(MainActivity.this, "⚠️ Sin conexión a Azure. Usando catálogo local.", Toast.LENGTH_LONG).show();
                     }
                 } else {
                     if (tvEstadoNube != null) {
-                        tvEstadoNube.setText("⚠️ " + mensajeError);
+                        tvEstadoNube.setText("Error: " + mensajeError);
                     }
                     Toast.makeText(MainActivity.this, mensajeError, Toast.LENGTH_SHORT).show();
                 }
@@ -1360,7 +1362,7 @@ public class MainActivity extends AppCompatActivity {
         scrollCotizador.setVisibility(View.VISIBLE);
         layoutCatalogo.setVisibility(View.GONE);
         fabAgregarProducto.setVisibility(View.GONE);
-        tvHeaderSubtitulo.setText("Cotizador y Calculadora de Descuentos");
+        tvHeaderSubtitulo.setText("Cotizador Comercial");
         if (scrollCotizador != null) {
             scrollCotizador.post(() -> scrollCotizador.scrollTo(0, 0));
         }

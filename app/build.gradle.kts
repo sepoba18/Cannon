@@ -24,8 +24,8 @@ android {
         applicationId = "com.example.cannon"
         minSdk = 23
         targetSdk = 36
-        versionCode = 5
-        versionName = "2.3"
+        versionCode = 6
+        versionName = "2.4"
 
         buildConfigField("String", "DEFAULT_AZURE_URL", "\"$azureSyncDefaultUrl\"")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
