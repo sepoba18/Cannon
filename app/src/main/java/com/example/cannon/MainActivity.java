@@ -33,8 +33,10 @@ import com.google.android.material.floatingactionbutton.ExtendedFloatingActionBu
 import com.google.android.material.textfield.TextInputEditText;
 import com.journeyapps.barcodescanner.ScanContract;
 import com.journeyapps.barcodescanner.ScanOptions;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -339,6 +341,13 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
         }
+        if (tvEstadoWeb != null) {
+            tvEstadoWeb.setOnClickListener(v -> {
+                if (!productoSeleccionado.isEmpty()) {
+                    consultarWebParaSeleccionActual();
+                }
+            });
+        }
     }
 
     private double obtenerDescuentoActualInput() {
@@ -454,10 +463,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void seleccionarProducto(String nombreProducto) {
-        seleccionarProducto(nombreProducto, null);
+        seleccionarProducto(nombreProducto, null, null);
     }
 
     private void seleccionarProducto(String nombreProducto, String plazaInicialPreferida) {
+        seleccionarProducto(nombreProducto, plazaInicialPreferida, null);
+    }
+
+    private void seleccionarProducto(String nombreProducto, String plazaInicialPreferida, String skuEscaneadoPreferido) {
         modoSoloWeb = false;
         productoSeleccionado = nombreProducto;
         tvResumenProducto.setText(nombreProducto);
@@ -483,7 +496,7 @@ public class MainActivity extends AppCompatActivity {
             Double pVal = plazas.get(plazaSeleccionada);
             precioSeleccionado = (pVal != null && Double.isFinite(pVal)) ? pVal : 0.0;
             tvResumenPlaza.setText("Medida: " + plazaSeleccionada);
-            aplicarDescuentoDesdeRepositorio(nombreProducto, plazaSeleccionada);
+            aplicarDescuentoDesdeRepositorio(nombreProducto, plazaSeleccionada, skuEscaneadoPreferido);
             actualizarUIPrecio();
             consultarWebParaSeleccionActual();
         } else {
@@ -517,7 +530,7 @@ public class MainActivity extends AppCompatActivity {
                     Double pVal = plazas.get(plaza);
                     precioSeleccionado = (pVal != null && Double.isFinite(pVal)) ? pVal : 0.0;
                     tvResumenPlaza.setText("Plaza: " + plaza);
-                    aplicarDescuentoDesdeRepositorio(nombreProducto, plaza);
+                    aplicarDescuentoDesdeRepositorio(nombreProducto, plaza, skuEscaneadoPreferido);
                 }
 
                 chip.setOnClickListener(v -> {
@@ -525,7 +538,7 @@ public class MainActivity extends AppCompatActivity {
                     Double pVal = plazas.get(plaza);
                     precioSeleccionado = (pVal != null && Double.isFinite(pVal)) ? pVal : 0.0;
                     tvResumenPlaza.setText("Plaza: " + plaza);
-                    aplicarDescuentoDesdeRepositorio(nombreProducto, plaza);
+                    aplicarDescuentoDesdeRepositorio(nombreProducto, plaza, null);
                     actualizarUIPrecio();
                     consultarWebParaSeleccionActual();
                 });
@@ -537,9 +550,13 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void aplicarDescuentoDesdeRepositorio(String nombreProducto, String plaza) {
+    private void aplicarDescuentoDesdeRepositorio(String nombreProducto, String plaza, String skuPreferido) {
         double desc = repository.obtenerDescuento(nombreProducto, plaza);
-        skuActivo = repository.obtenerSku(nombreProducto, plaza);
+        if (skuPreferido != null && !skuPreferido.trim().isEmpty()) {
+            skuActivo = skuPreferido.trim().toUpperCase(Locale.ROOT);
+        } else {
+            skuActivo = repository.obtenerSku(nombreProducto, plaza);
+        }
         actualizarResumenSkuYManual();
         aplicarDescuentoRapido(desc);
     }
@@ -575,7 +592,7 @@ public class MainActivity extends AppCompatActivity {
         final long seq = ++consultaWebSeq;
         ultimaInfoWeb = null;
         layoutComparativaWeb.setVisibility(View.VISIBLE);
-        tvEstadoWeb.setText("Consultando...");
+        tvEstadoWeb.setText("Consultando en vivo...");
         tvNombreWeb.setVisibility(View.GONE);
         tvCompWebFinal.setText("...");
         tvCompWebDcto.setText("-");
@@ -594,14 +611,15 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onIniciando() {
                 if (seq != consultaWebSeq) return;
-                tvEstadoWeb.setText("Consultando...");
+                tvEstadoWeb.setText("Consultando en vivo...");
             }
 
             @Override
             public void onResultado(CannonWebClient.WebProductInfo info) {
                 if (seq != consultaWebSeq) return;
                 ultimaInfoWeb = info;
-                tvEstadoWeb.setText(info.coincidenciaExactaSku ? "SKU Exacto" : "Similar Web");
+                String hora = new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date());
+                tvEstadoWeb.setText((info.coincidenciaExactaSku ? "SKU Exacto" : "Por Nombre") + " · " + hora);
                 if (!info.nombreWeb.isEmpty()) {
                     tvNombreWeb.setVisibility(View.VISIBLE);
                     tvNombreWeb.setText(info.nombreWeb + (info.sku.isEmpty() ? "" : " (" + info.sku + ")"));
@@ -628,17 +646,21 @@ public class MainActivity extends AppCompatActivity {
             public void onNoEncontrado() {
                 if (seq != consultaWebSeq) return;
                 ultimaInfoWeb = null;
-                tvEstadoWeb.setText("No publicado en web");
+                tvEstadoWeb.setText("No encontrado");
                 tvNombreWeb.setVisibility(View.GONE);
                 tvCompWebFinal.setText("-");
-                tvCompWebDcto.setText("Este SKU no está en cannonhome.cl");
+                if (!skuConsulta.isEmpty() && !nombreConsulta.isEmpty()) {
+                    tvCompWebDcto.setText("No se encontró por SKU ni por nombre");
+                } else {
+                    tvCompWebDcto.setText("No se encontró en internet");
+                }
                 tvCompWebNormal.setText("Normal: -");
                 tvCompDiferencia.setVisibility(View.GONE);
                 layoutAccionesWeb.setVisibility(View.GONE);
                 if (modoSoloWeb) {
-                    tvResumenProducto.setText("SKU " + skuConsulta + " (nuevo)");
-                    tvResumenPlaza.setText("No está en catálogo ni en la web. Agrégalo abajo.");
-                    Toast.makeText(MainActivity.this, "SKU '" + skuConsulta + "' no encontrado. Puedes agregarlo al catálogo.", Toast.LENGTH_LONG).show();
+                    tvResumenProducto.setText("SKU " + skuConsulta + " (no encontrado)");
+                    tvResumenPlaza.setText("No se encontró en catálogo ni en internet.");
+                    Toast.makeText(MainActivity.this, "No se encontró el producto '" + skuConsulta + "'.", Toast.LENGTH_LONG).show();
                 }
             }
 
@@ -1345,7 +1367,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (info != null) {
             autoProducto.setText(info.producto, false);
-            seleccionarProducto(info.producto, info.plaza);
+            seleccionarProducto(info.producto, info.plaza, skuLimpio);
 
             Toast.makeText(this, "🎯 SKU: " + skuLimpio + " • " + info.plaza, Toast.LENGTH_SHORT).show();
         } else {

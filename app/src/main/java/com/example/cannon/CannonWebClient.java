@@ -13,8 +13,10 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Locale;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -26,6 +28,20 @@ public class CannonWebClient {
 
     public static final String GRAPHQL_ENDPOINT = "https://cannonhome.cl/graphql";
     private static final int TIMEOUT_MS = 8000;
+    private static final String PRODUCT_FIELDS =
+            "items { name sku url_key stock_status price_range { minimum_price { regular_price { value } final_price { value } discount { percent_off } } } }";
+    private static final Set<String> STOPWORDS_BUSQUEDA = new HashSet<>(Arrays.asList(
+            "plaza", "plazas", "king", "super", "unica",
+            "del", "las", "los", "con", "para", "room"
+    ));
+    private static final String[] TIPOS_PRODUCTO = {
+            "funda plumon", "cubrecolchon", "room spray",
+            "plumon", "sabana", "quilt", "cubrecama", "almohada",
+            "topper", "toalla", "alfombra", "funda", "frazada", "cojin",
+            "piecera", "difusor", "spray", "vela", "bata", "pantufla",
+            "colchon", "cama", "respaldo", "velador", "manta", "cortina",
+            "mantel", "protector"
+    };
 
     public static class WebProductInfo {
         public final String sku;
@@ -61,9 +77,8 @@ public class CannonWebClient {
         void onError(String detalle);
     }
 
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final ExecutorService executor = Executors.newFixedThreadPool(2);
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
-    private final ConcurrentHashMap<String, WebProductInfo> cacheEnMemoria = new ConcurrentHashMap<>();
 
     public void consultarProducto(String sku, String nombreProducto, String plaza, WebCallback callback) {
         final String skuLimpio = sku != null ? sku.trim().toUpperCase(Locale.ROOT) : "";
@@ -77,18 +92,6 @@ public class CannonWebClient {
             return;
         }
 
-        final String cacheKey = !skuLimpio.isEmpty()
-                ? "SKU:" + skuLimpio
-                : "NAME:" + nombreLimpio.toUpperCase(Locale.ROOT) + "|" + plazaLimpia.toUpperCase(Locale.ROOT);
-
-        WebProductInfo cached = cacheEnMemoria.get(cacheKey);
-        if (cached != null) {
-            if (callback != null) {
-                callback.onResultado(cached);
-            }
-            return;
-        }
-
         if (callback != null) {
             callback.onIniciando();
         }
@@ -97,26 +100,31 @@ public class CannonWebClient {
             try {
                 WebProductInfo encontrado = null;
 
-                // Paso 1: Si tenemos SKU, consultar únicamente por SKU exacto (sin mezcla difusa)
+                // Paso 1: Si tenemos SKU, consultar primero por SKU exacto en vivo
                 if (!skuLimpio.isEmpty()) {
-                    String querySku = "{ products(filter: { sku: { eq: \"" + escaparGraphql(skuLimpio) + "\" } }) { items { name sku url_key price_range { minimum_price { regular_price { value } final_price { value } discount { percent_off } } } } } }";
+                    String querySku = "{ products(filter: { sku: { eq: \"" + escaparGraphql(skuLimpio) + "\" } }) { " + PRODUCT_FIELDS + " } }";
                     String respuestaSku = ejecutarPostGraphql(querySku);
                     encontrado = parsearRespuestaGraphql(respuestaSku, skuLimpio, plazaLimpia);
-                } else if (!nombreLimpio.isEmpty()) {
-                    // Paso 2: Solo para productos sin SKU, búsqueda por nombre con validación estricta
-                    String termino = construirTerminoBusqueda(nombreLimpio, plazaLimpia);
-                    if (!termino.isEmpty()) {
-                        String queryNombre = "{ products(search: \"" + escaparGraphql(termino) + "\", pageSize: 5) { items { name sku url_key price_range { minimum_price { regular_price { value } final_price { value } discount { percent_off } } } } } }";
-                        String respuestaNombre = ejecutarPostGraphql(queryNombre);
-                        encontrado = parsearRespuestaGraphqlConNombre(respuestaNombre, "", nombreLimpio, plazaLimpia);
+                }
+
+                // Paso 2: Si no se encontró por SKU (o no había SKU), buscar por nombre + plaza
+                String terminoConPlaza = "";
+                if (encontrado == null && !nombreLimpio.isEmpty()) {
+                    terminoConPlaza = construirTerminoBusqueda(nombreLimpio, plazaLimpia);
+                    if (!terminoConPlaza.isEmpty()) {
+                        encontrado = consultarPorTerminoNombre(terminoConPlaza, nombreLimpio, plazaLimpia);
+                    }
+                }
+
+                // Paso 3: Fallback secundario por nombre sin plaza (priorizando la plaza preferida en el puntaje)
+                if (encontrado == null && !nombreLimpio.isEmpty()) {
+                    String terminoSinPlaza = construirTerminoBusqueda(nombreLimpio, "");
+                    if (!terminoSinPlaza.isEmpty() && !terminoSinPlaza.equalsIgnoreCase(terminoConPlaza)) {
+                        encontrado = consultarPorTerminoNombre(terminoSinPlaza, nombreLimpio, plazaLimpia);
                     }
                 }
 
                 if (encontrado != null) {
-                    cacheEnMemoria.put(cacheKey, encontrado);
-                    if (!encontrado.sku.isEmpty()) {
-                        cacheEnMemoria.put("SKU:" + encontrado.sku.toUpperCase(Locale.ROOT), encontrado);
-                    }
                     final WebProductInfo resultadoFinal = encontrado;
                     mainHandler.post(() -> {
                         if (callback != null) {
@@ -141,6 +149,12 @@ public class CannonWebClient {
         });
     }
 
+    private WebProductInfo consultarPorTerminoNombre(String termino, String nombreEsperado, String plazaPreferida) throws Exception {
+        String queryNombre = "{ products(search: \"" + escaparGraphql(termino) + "\", sort: { relevance: DESC }, pageSize: 15) { " + PRODUCT_FIELDS + " } }";
+        String respuestaNombre = ejecutarPostGraphql(queryNombre);
+        return parsearRespuestaGraphqlConNombre(respuestaNombre, "", nombreEsperado, plazaPreferida);
+    }
+
     private String ejecutarPostGraphql(String graphqlQuery) throws Exception {
         HttpURLConnection conn = null;
         try {
@@ -149,10 +163,13 @@ public class CannonWebClient {
             conn.setRequestMethod("POST");
             conn.setConnectTimeout(TIMEOUT_MS);
             conn.setReadTimeout(TIMEOUT_MS);
+            conn.setUseCaches(false);
             conn.setDoOutput(true);
             conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
             conn.setRequestProperty("Accept", "application/json");
-            conn.setRequestProperty("User-Agent", "CannonCotizadorApp/2.2 (Android)");
+            conn.setRequestProperty("Cache-Control", "no-cache, no-store, max-age=0");
+            conn.setRequestProperty("Pragma", "no-cache");
+            conn.setRequestProperty("User-Agent", "CannonCotizadorApp/2.3 (Android)");
 
             JSONObject payload = new JSONObject();
             payload.put("query", graphqlQuery);
@@ -216,6 +233,10 @@ public class CannonWebClient {
 
             String skuTarget = skuEsperado != null ? skuEsperado.trim().toUpperCase(Locale.ROOT) : "";
             boolean validarNombre = skuTarget.isEmpty() && nombreEsperado != null && !nombreEsperado.trim().isEmpty();
+            String locNorm = validarNombre
+                    ? quitarAcentos(construirTerminoBusqueda(nombreEsperado, "")).toLowerCase(Locale.ROOT)
+                    : "";
+            String tipoDetectado = validarNombre ? detectarTipoProducto(locNorm) : null;
             JSONObject mejorItem = null;
             int mejorPuntaje = Integer.MIN_VALUE;
 
@@ -232,8 +253,21 @@ public class CannonWebClient {
                 }
 
                 // Regla estricta por nombre (solo cuando no hay SKU): exigir tipo + palabras clave del modelo
-                if (validarNombre && !esCoincidenciaValidaPorNombre(nombreEsperado, itemName)) {
-                    continue;
+                int tokenMatches = 0;
+                if (validarNombre) {
+                    String webNorm = quitarAcentos(itemName).toLowerCase(Locale.ROOT);
+                    if (locNorm.isEmpty() || webNorm.isEmpty()) continue;
+                    if (tipoDetectado != null && !coincideTipoProducto(tipoDetectado, webNorm)) {
+                        continue;
+                    }
+                    int[] conteo = contarCoincidenciasTokens(locNorm, webNorm, tipoDetectado);
+                    if (tipoDetectado == null && conteo[0] == 0) {
+                        continue;
+                    }
+                    if (conteo[1] < Math.min(2, conteo[0])) {
+                        continue;
+                    }
+                    tokenMatches = conteo[1];
                 }
 
                 int puntaje = 0;
@@ -243,9 +277,13 @@ public class CannonWebClient {
                 if (coincidePlazaEnNombre(itemName, plazaPreferida)) {
                     puntaje += 50;
                 }
-                if (i == 0) {
-                    puntaje += 1;
+                if (validarNombre) {
+                    puntaje += 20 * tokenMatches;
                 }
+                if ("IN_STOCK".equalsIgnoreCase(item.optString("stock_status", ""))) {
+                    puntaje += 15;
+                }
+                puntaje += Math.max(0, 15 - i);
 
                 if (puntaje > mejorPuntaje) {
                     mejorPuntaje = puntaje;
@@ -302,12 +340,18 @@ public class CannonWebClient {
     static String construirTerminoBusqueda(String nombreProducto, String plaza) {
         if (nombreProducto == null) return "";
         String limpio = nombreProducto
-                .replaceAll("(?i)\\b(CN|RS|AF|EC|BCF|WW|100%Alg|100% Alg)\\b", " ")
-                .replaceAll("(?i)\\bAlm\\b", "Almohada")
-                .replaceAll("(?i)\\bSab\\b", "Sabana")
-                .replaceAll("(?i)\\bFda\\s*P\\.?\\b", "Funda Plumon")
-                .replaceAll("(?i)\\bQ\\.?\\b", "Quilt")
+                .replaceAll("(?i)\\b(\\d{3,4})\\s*H\\b", "$1 Hilos")
+                .replaceAll("(?i)\\b100%(?:\\s*Alg\\b)?", " ")
+                .replaceAll("(?i)\\b(CN|RS|AF|EC|BCF|WW|STWSH)\\b", " ")
+                .replaceAll("(?i)\\b[AWSVOI]\\d{2}\\b", " ")
+                .replaceAll("(?i)\\bAlm\\b\\.?", "Almohada")
+                .replaceAll("(?i)\\bSab\\b\\.?", "Sabana")
+                .replaceAll("(?i)\\bFda\\s*P\\b\\.?", "Funda Plumon")
+                .replaceAll("(?i)\\bQ\\b\\.?", "Quilt")
+                .replaceAll("(?i)\\b(ESTMP|ESTAMP)\\b\\.?", "Estampado")
+                .replaceAll("(?i)\\bPLUM\\b\\.?", "Pluma")
                 .replaceAll("[^\\p{L}\\p{N}\\s.]", " ")
+                .replaceAll("(?<!\\d)\\.|\\.(?!\\d)", " ")
                 .replaceAll("\\s+", " ")
                 .trim();
 
@@ -346,42 +390,82 @@ public class CannonWebClient {
         return false;
     }
 
-    private static boolean esCoincidenciaValidaPorNombre(String nombreLocal, String nombreWeb) {
+    static boolean esCoincidenciaValidaPorNombre(String nombreLocal, String nombreWeb) {
         String loc = quitarAcentos(construirTerminoBusqueda(nombreLocal, "")).toLowerCase(Locale.ROOT);
         String web = quitarAcentos(nombreWeb != null ? nombreWeb : "").toLowerCase(Locale.ROOT);
         if (loc.isEmpty() || web.isEmpty()) return false;
 
-        String[] tipos = {
-                "plumon", "sabana", "quilt", "cubrecama", "almohada",
-                "cubrecolchon", "topper", "toalla", "alfombra", "funda", "frazada", "cojin", "piecera"
-        };
-        String tipoDetectado = null;
-        for (String t : tipos) {
-            if (loc.contains(t)) {
-                tipoDetectado = t;
-                break;
-            }
-        }
-        if (tipoDetectado != null && !web.contains(tipoDetectado)) {
+        String tipoDetectado = detectarTipoProducto(loc);
+        if (tipoDetectado != null && !coincideTipoProducto(tipoDetectado, web)) {
             return false;
         }
 
+        int[] conteo = contarCoincidenciasTokens(loc, web, tipoDetectado);
+        if (tipoDetectado == null && conteo[0] == 0) {
+            return false;
+        }
+        return conteo[1] >= Math.min(2, conteo[0]);
+    }
+
+    private static String detectarTipoProducto(String loc) {
+        if (loc.contains("cubre colchon")) {
+            return "cubrecolchon";
+        }
+        for (String t : TIPOS_PRODUCTO) {
+            if (loc.contains(t)) {
+                return t;
+            }
+        }
+        return null;
+    }
+
+    private static boolean coincideTipoProducto(String tipoDetectado, String web) {
+        if ("funda plumon".equals(tipoDetectado)) {
+            return web.contains("funda") && web.contains("plumon");
+        }
+        if ("cubrecolchon".equals(tipoDetectado)) {
+            return web.contains("cubrecolchon") || web.contains("cubre colchon");
+        }
+        if ("quilt".equals(tipoDetectado) || "cubrecama".equals(tipoDetectado)) {
+            return web.contains("quilt") || web.contains("cubrecama");
+        }
+        if ("room spray".equals(tipoDetectado)) {
+            return web.contains("spray");
+        }
+        return web.contains(tipoDetectado);
+    }
+
+    private static int[] contarCoincidenciasTokens(String loc, String web, String tipoDetectado) {
+        String[] palabrasTipo = tipoDetectado != null ? tipoDetectado.split("\\s+") : new String[0];
         String[] tokens = loc.split("\\s+");
         int significativos = 0;
         int coincidencias = 0;
         for (String tok : tokens) {
-            if (tok.length() < 3) continue;
-            if (tok.equals(tipoDetectado) || tok.equals("plaza") || tok.equals("plazas")
-                    || tok.equals("king") || tok.equals("super")) {
+            if (tok.length() < 3 || STOPWORDS_BUSQUEDA.contains(tok)) {
+                continue;
+            }
+            if (esTokenDeTipo(tok, tipoDetectado, palabrasTipo)) {
                 continue;
             }
             significativos++;
-            if (web.contains(tok)) {
+            if (web.contains(tok) || (tok.length() >= 5 && tok.endsWith("s")
+                    && web.contains(tok.substring(0, tok.length() - 1)))) {
                 coincidencias++;
             }
         }
-        int minimoRequerido = Math.min(2, significativos);
-        return coincidencias >= minimoRequerido;
+        return new int[]{significativos, coincidencias};
+    }
+
+    private static boolean esTokenDeTipo(String tok, String tipoDetectado, String[] palabrasTipo) {
+        if ("cubrecolchon".equals(tipoDetectado) && ("cubre".equals(tok) || "colchon".equals(tok))) {
+            return true;
+        }
+        for (String t : palabrasTipo) {
+            if (tok.equals(t) || tok.equals(t + "s") || tok.equals(t + "es")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static String quitarAcentos(String texto) {

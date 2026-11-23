@@ -200,4 +200,72 @@ public class CotizadorEngineTest {
         List<String> filtradosCojin = repo.obtenerNombresPorCategoria("COJIN");
         assertTrue(filtradosCojin.contains("Cojín Velvet Decorativo"));
     }
+
+    @Test
+    public void terminoBusqueda_expandeHilosYAbreviaturasYQuitaTemporada() {
+        assertEquals("Sabana 300 Hilos 2 plazas",
+                CannonWebClient.construirTerminoBusqueda("SAB 300H CN", "2.0"));
+        assertEquals("QUILT VELVET 2 plazas",
+                CannonWebClient.construirTerminoBusqueda("QUILT VELVET STWSH", "2.0"));
+        assertEquals("Room Spray 450ml Night Orchid",
+                CannonWebClient.construirTerminoBusqueda("Room Spray EC 450ml Night Orchid A26", "Única"));
+        assertEquals("TOPPER Pluma 1.5 plazas",
+                CannonWebClient.construirTerminoBusqueda("TOPPER PLUM", "1.5"));
+    }
+
+    @Test
+    public void parseoGraphqlCannon_aceptaEquivalenciaQuiltCubrecamaYPriorizaStockYPlaza() {
+        String jsonBusqueda = "{\"data\":{\"products\":{\"items\":["
+                + "{\"name\":\"Cubrecama 1.5 Plazas Maria Gris\",\"sku\":\"CURSL03G15A27\",\"url_key\":\"cubrecama-15\",\"stock_status\":\"IN_STOCK\","
+                + "\"price_range\":{\"minimum_price\":{\"regular_price\":{\"value\":72990},\"final_price\":{\"value\":51090},\"discount\":{\"percent_off\":30}}}},"
+                + "{\"name\":\"Cubrecama 2 Plazas Maria Taupe\",\"sku\":\"CURSL03F20A27\",\"url_key\":\"cubrecama-20-taupe\",\"stock_status\":\"OUT_OF_STOCK\","
+                + "\"price_range\":{\"minimum_price\":{\"regular_price\":{\"value\":92990},\"final_price\":{\"value\":65090},\"discount\":{\"percent_off\":30}}}},"
+                + "{\"name\":\"Cubrecama 2 Plazas Maria Gris\",\"sku\":\"CURSL03G20A27\",\"url_key\":\"cubrecama-20-gris\",\"stock_status\":\"IN_STOCK\","
+                + "\"price_range\":{\"minimum_price\":{\"regular_price\":{\"value\":92990},\"final_price\":{\"value\":65090},\"discount\":{\"percent_off\":30}}}}"
+                + "]}}}";
+
+        CannonWebClient.WebProductInfo info = CannonWebClient.parsearRespuestaGraphqlConNombre(
+                jsonBusqueda, "", "QUILT Maria", "2.0");
+        assertNotNull(info);
+        assertFalse(info.coincidenciaExactaSku);
+        assertEquals("CURSL03G20A27", info.sku);
+        assertEquals("Cubrecama 2 Plazas Maria Gris", info.nombreWeb);
+        assertEquals(65090.0, info.precioFinalWeb, 0.001);
+    }
+
+    @Test
+    public void parseoGraphqlCannon_validaFundaPlumonYRechazaPlumonDistinto() {
+        String jsonBusqueda = "{\"data\":{\"products\":{\"items\":["
+                + "{\"name\":\"Plumón 2 Plazas Lauren\",\"sku\":\"PLLAU20\",\"url_key\":\"plumon-lauren\",\"stock_status\":\"IN_STOCK\","
+                + "\"price_range\":{\"minimum_price\":{\"regular_price\":{\"value\":99990},\"final_price\":{\"value\":49990},\"discount\":{\"percent_off\":50}}}},"
+                + "{\"name\":\"Funda Plumón 2 Plazas Lauren Sage\",\"sku\":\"FDRSJU002P20A\",\"url_key\":\"funda-lauren-sage\",\"stock_status\":\"IN_STOCK\","
+                + "\"price_range\":{\"minimum_price\":{\"regular_price\":{\"value\":84990},\"final_price\":{\"value\":33990},\"discount\":{\"percent_off\":60.01}}}}"
+                + "]}}}";
+
+        CannonWebClient.WebProductInfo info = CannonWebClient.parsearRespuestaGraphqlConNombre(
+                jsonBusqueda, "", "Fda P. LAUREN", "2.0");
+        assertNotNull(info);
+        assertEquals("FDRSJU002P20A", info.sku);
+        assertEquals(33990.0, info.precioFinalWeb, 0.001);
+
+        String jsonSoloPlumon = "{\"data\":{\"products\":{\"items\":["
+                + "{\"name\":\"Plumón 2 Plazas Lauren\",\"sku\":\"PLLAU20\",\"url_key\":\"plumon-lauren\",\"stock_status\":\"IN_STOCK\","
+                + "\"price_range\":{\"minimum_price\":{\"regular_price\":{\"value\":99990},\"final_price\":{\"value\":49990},\"discount\":{\"percent_off\":50}}}}"
+                + "]}}}";
+        assertNull(CannonWebClient.parsearRespuestaGraphqlConNombre(
+                jsonSoloPlumon, "", "Fda P. LAUREN", "2.0"));
+    }
+
+    @Test
+    public void parseoGraphqlCannon_productoInexistenteRetornaNull() {
+        String jsonOtrosProductos = "{\"data\":{\"products\":{\"items\":["
+                + "{\"name\":\"Cubre Colchón 2 Plazas Waterproof\",\"sku\":\"CCAFBWA01P20Z\",\"url_key\":\"cubre-waterproof\",\"stock_status\":\"IN_STOCK\","
+                + "\"price_range\":{\"minimum_price\":{\"regular_price\":{\"value\":19990},\"final_price\":{\"value\":9990},\"discount\":{\"percent_off\":50}}}},"
+                + "{\"name\":\"Sábanas 2 Plazas Crochet Lila\",\"sku\":\"JSAFL25M20A26\",\"url_key\":\"sabana-crochet\",\"stock_status\":\"IN_STOCK\","
+                + "\"price_range\":{\"minimum_price\":{\"regular_price\":{\"value\":28990},\"final_price\":{\"value\":14490},\"discount\":{\"percent_off\":50}}}}"
+                + "]}}}";
+
+        assertNull(CannonWebClient.parsearRespuestaGraphqlConNombre(
+                jsonOtrosProductos, "", "Producto Inventado Inexistente XYZ", "2.0"));
+    }
 }
